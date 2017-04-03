@@ -1,3 +1,12 @@
+module Tetris where
+
+-- =========================================
+-- Types
+-- =========================================
+
+                               --data Shape = J | L | I | S | Z | O | T
+                               --       	deriving (Eq, Show, Enum)
+--Клетка заполнена?
 data Block = Free | Full
 
 --Строки нашей доски
