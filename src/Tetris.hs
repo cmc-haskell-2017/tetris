@@ -1,5 +1,5 @@
 module Tetris where
-
+--Test
 -- =========================================
 -- Types
 -- =========================================
@@ -15,7 +15,7 @@ type Board = [Row]
 
 type Score = Integer
 
-type Coord = (Int, Int)
+type Coord = (Int, Int,Int)
 
 type Game_state = (Board,  Figure)
 
