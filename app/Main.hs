@@ -1,6 +1,6 @@
 module Main where
 
-import Lib
+import Tetris
 
 main :: IO ()
 main = run
