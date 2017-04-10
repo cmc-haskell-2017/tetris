@@ -6,8 +6,14 @@ import Graphics.Gloss.Geometry.Line
 import Graphics.Gloss.Interface.Pure.Game
 
 run :: IO ()
-run = putStrLn "This project is not yet implemented"
-
+run = do
+  --putStrLn "This project is not yet implemented"
+ 
+   play display bgColor fps (genEmptyBoard ) drawTetris handleTetris updateTetris
+   where
+    display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
+    bgColor = black   -- цвет фона
+    fps     = 200    -- кол-во кадров в секунду
 
 -- =========================================
 -- Types
@@ -18,7 +24,7 @@ run = putStrLn "This project is not yet implemented"
 
 
                                --data Shape = J | L | I | S | Z | O | T
-                               --       	deriving (Eq, Show, Enum)
+                               --         deriving (Eq, Show, Enum)
 --Клетка заполнена?
 data Block = Free | Full
 
@@ -35,12 +41,19 @@ type Score = Integer
 --их последовательностью
 type Coord = (Int, Int)
 
+type Time = Float
+
 --Состояние игры в текущий момент(разделили доску и фигуру,
 --чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
 --оптимизировано)
-type Time = Float
-type Gamestate = (Board,  Figure, Speed, Time)
+--type Gamestate = (Board,  Figure, Speed, Time)
 
+data Gamestate = Gamestate
+  { board   :: Board  
+  , figure  :: Figure
+  , speed   :: Speed
+  , time    :: Time    
+  }
 --Скорость
 type Speed = Float
 
@@ -49,12 +62,12 @@ type Speed = Float
 --произвольно только на расстоянии больше 4 клеток от края,
 --а фигуру O на расстоянии больше 2 клеток от края
 data Figure = O [Coord] |
-			  I [Coord] | 
-			  T [Coord] |
-			  J [Coord] | L  [Coord] | 
-			  S [Coord] | Z  [Coord] 
-			  	deriving(Eq, Show)
-	
+        I [Coord] | 
+        T [Coord] |
+        J [Coord] | L  [Coord] | 
+        S [Coord] | Z  [Coord] 
+          deriving(Eq, Show)
+  
 
 
 -- | Ширина экрана.
@@ -79,8 +92,17 @@ genFigure::Int -> Figure
 genFigure _ = O[(0,0),(0,0)]
 
 --Заполняем доску пустыми значениями
-genEmptyBoard::Board
-genEmptyBoard =  [[Free]]
+
+genEmptyBoard :: Gamestate
+genEmptyBoard = Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
+
+
+--           ([[Free]],O[(0,0),(0,0)],0,0)
 --Генерируем бесконечный список из случайных фигур
 generateRandomFigureList:: StdGen -> [Figure]
 generateRandomFigureList _ =  [O[(0,0),(0,0)]]
@@ -104,7 +126,7 @@ turn _ =  O[(0,0),(0,0)]
 --окончания возвращает счет
 startGame::Board -> Score
 startGame  _ =  0
---Переещает фигуру влево	
+--Переещает фигуру влево  
 moveLeft::Figure -> Figure
 moveLeft _ =  O[(0,0),(0,0)]
 --Перемещает фигуру вправо
@@ -112,7 +134,12 @@ moveRight::Figure -> Figure
 moveRight _ =  O[(0,0),(0,0)]
 --При нажатии клавиши "вниз" роняет фигуру 
 drop::Gamestate -> Gamestate
-drop  _ =  ([[Free]],O[(0,0),(0,0)],0,0)
+drop  _ =  Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
 
 
 
@@ -218,12 +245,22 @@ updateBoard _ _ =  [[Free]]
 updateSpeed::Time -> Speed -> Speed
 updateSpeed _ _ = 0
 --Аргумент функции play, обновляет состояние тетриса
-updateTetris :: Float -> Board -> Board
-updateTetris _ _ =  [[Free]]
+updateTetris :: Float -> Gamestate -> Gamestate
+updateTetris _ _ =  Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
 
 --Обновить весь тетрис
 updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
-updateTheWholeTetris _ _ _ =  ([[Free]],O[(0,0),(0,0)],0,0)
+updateTheWholeTetris _ _ _ =  Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
 -- ===========================================
 -- timing
 -- =======================================
@@ -234,16 +271,37 @@ updateTheWholeTetris _ _ _ =  ([[Free]],O[(0,0),(0,0)],0,0)
 
 --Обновляет общее состояние тетриса
 newTact::Figure -> Board -> Speed -> Gamestate
-newTact _ _ _ =  ([[Free]],O[(0,0),(0,0)],0,0)
+newTact _ _ _ =  Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
 
 --Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
 newMove::Board -> Gamestate
-newMove _ =  ([[Free]],O[(0,0),(0,0)],0,0)
+newMove _ =  Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
 
 
 --Аргумент функции play, которя говорит, что длает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) _ = ([[Free]],O[(0,0),(0,0)],0,0)
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  _ = ([[Free]],O[(0,0),(0,0)],0,0)
-handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) _ = ([[Free]],O[(0,0),(0,0)],0,0)
-handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) _ = ([[Free]],O[(0,0),(0,0)],0,0)
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _)  = bumpPlayer
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)   = bumpPlayer
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ )  = bumpPlayer
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ )  = bumpPlayer
+
+bumpPlayer :: Gamestate -> Gamestate
+bumpPlayer _ = Gamestate
+  { board = [[Free]]
+  , figure  = O[(0,0)]
+  , speed  = 0
+  , time   = 0
+  }
+ 
+
+
