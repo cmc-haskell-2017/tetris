@@ -16,7 +16,7 @@ run = do
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 60    -- кол-во кадров в секунду
+    fps     = 100    -- кол-во кадров в секунду
 -----------------------------------------------------------------------------------------------------------------------------------------------------
 
 
@@ -269,12 +269,17 @@ drawFigure _ = translate (-w) h (scale 30 30 (pictures
 --    w = fromIntegral screenWidth  / 2
 --    h = fromIntegral screenHeight / 2
 drawTetris ::Gamestate-> Picture
-drawTetris (a,Figure O DUp (b,c),d,e) =  pictures [ translate (-w) h (scale  15 15 (pictures
-  [ color white  (polygon [ ( fromIntegral b, fromIntegral c), (fromIntegral b, fromIntegral (-c)), (fromIntegral  (b + 4),fromIntegral (-c)), (fromIntegral  (b + 4),fromIntegral c) ])            -- белая рамка
-    ]))]
+drawTetris (a,Figure O DUp (b,c),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
   where
-   w = fromIntegral screenWidth  / 2
-   h = fromIntegral screenHeight / 2
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+
+
+
+
+
 --drawTetris _ = color white . pictures . map drawBox . [ ((double2Float 0.0, double2Float 0.0), (double2Float 0.0, double2Float (-4.0)))
 --                                                    , ((double2Float 4.0, double2Floatl (-4.0)), (double2Float 4.0,double2Float 0.0))
 --                                                   ]
@@ -333,7 +338,8 @@ updateSpeed _ _ = 0
 --updateTetris :: Float -> Board -> Board
 --updateTetris _ _ =  [[Free]]
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _ t = t
+updateTetris _  (a,Figure O DUp (b,c),d,e) | c < screenHeight - 60   =  (a,Figure O DUp (b ,c +1),d,e)
+                                           | otherwise = (a,Figure O DUp (b,c),d,e)
 ---------------------------------------------------------------------------------------------------------------------------------------------
 
 --Обновить весь тетрис
@@ -357,13 +363,13 @@ newMove _ =  ([[Free]],Figure O DUp (0,0),0,0)
 
 --Аргумент функции play, которя говорит, что длает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b + 1,c ),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b + 60,c ),d,e)
 handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
              
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b - 1,c ),d,e)
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b - 60,c ),d,e)
 handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t = t
-handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,Figure O DUp (b,c),d,e) =  (a,Figure O DUp (b ,c -1),d,e)
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,Figure O DUp (b,c),d,e) =  (a,Figure O DUp (b ,c +60),d,e)
 handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
-handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b ,c + 1),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b ,c - 60),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 handleTetris  _ t = t                                                       
