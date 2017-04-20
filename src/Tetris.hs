@@ -203,7 +203,7 @@ moveRight::Figure -> Figure
 moveRight _ =  Figure O DUp (0,0)
 --При нажатии клавиши "вниз" роняет фигуру 
 dropit::Gamestate -> Gamestate
-dropit  _ =       ([[Free]],Figure O DUp (0,0),0,0)
+dropit  (a,Figure O DUp (b,c),d,e) =       (a,Figure O DUp (b,screenHeight - 60 ),d,e)
 
 
 -- =========================================
@@ -363,12 +363,14 @@ newMove _ =  ([[Free]],Figure O DUp (0,0),0,0)
 
 --Аргумент функции play, которя говорит, что длает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b + 60,c ),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,Figure O DUp (b,c),d,e) | ((b + 60) < screenWidth) = (a,Figure O DUp (b + 60,c ),d,e)
+                                                                                  | otherwise = (a,Figure O DUp (b,c),d,e)
 handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
              
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b - 60,c ),d,e)
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,Figure O DUp (b,c),d,e) | ((b - 60 ) > - 1 )  = (a,Figure O DUp (b - 60,c ),d,e)
+                                                                                  | otherwise = (a,Figure O DUp (b,c),d,e)   
 handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t = t
-handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,Figure O DUp (b,c),d,e) =  (a,Figure O DUp (b ,c +60),d,e)
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,Figure O DUp (b,c),d,e)  = dropit (a,Figure O DUp (b,c),d,e) 
 handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b ,c - 60),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
