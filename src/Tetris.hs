@@ -10,9 +10,11 @@ run :: IO ()
 -------------------------------------------------------------------------------------------------------------------------------------------------
 --run = putStrLn "This project is not yet implemented"
 run = do
+ g <- newStdGen
+
    --putStrLn "This project is not yet implemented"
  
-    play display bgColor fps (genEmptyBoard ) drawTetris handleTetris updateTetris
+ play display bgColor fps (genEmptyBoard g ) drawTetris handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
@@ -51,7 +53,7 @@ type Coord = (Int, Int)
 --оптимизировано)
 type Time = Float
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  Figure, Speed, Time)
+type Gamestate = (Board,  [Figure], Speed, Time)
 --data Gamestate = Gamestate
 --    { board   :: Board  
 --    , figure  :: Figure
@@ -97,14 +99,35 @@ screenHeight = 600
 --На вход принимается случайное число от 0 до 6, которое определяет
 --Фигуру
 genFigure::Int -> Figure
-genFigure _ = Figure O DUp (0,0)
+genFigure a | a== 0  =  Figure O DUp (0,0)
+            | a== 1  =  Figure I DUp (0,0)
+            | a== 2  =  Figure T DUp (0,0)
+            | a== 3  =  Figure J DUp (0,0)
+            | a== 4  =  Figure L DUp (0,0)
+            | a== 5  =  Figure S DUp (0,0)
+            | a== 6  =  Figure Z DUp (0,0)
+------------------------------------------------------------------------------------------------------------------------------------------
+-- | Инициализировать одни ворота.
+--initGate :: Height -> Gate
+--initGate h = (defaultOffset, h)
+
+-- | Инициализировать случайный бесконечный
+-- список ворот для игровой вселенной.
+initFigures :: StdGen -> [Figure]
+initFigures g = map genFigure
+  (randomRs getrange g)
+
+getrange :: (Int, Int)
+getrange = (0, 6)
+  
+------------------------------------------------------------------------------------------------------------------------------------------
 
 --Заполняем доску пустыми значениями
 ------------------------------------------------------------------------------------------------------------------------------------
 --genEmptyBoard::Board
 --genEmptyBoard =  [[Free]]
-genEmptyBoard::Gamestate
-genEmptyBoard = ([[Free]],Figure O DUp (0,0),0,0)
+genEmptyBoard::StdGen -> Gamestate
+genEmptyBoard g = ([[Free]],initFigures g,0,0)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -203,7 +226,7 @@ moveRight::Figure -> Figure
 moveRight _ =  Figure O DUp (0,0)
 --При нажатии клавиши "вниз" роняет фигуру 
 dropit::Gamestate -> Gamestate
-dropit  (a,Figure O DUp (b,c),d,e) =       (a,Figure O DUp (b,screenHeight - 60 ),d,e)
+dropit  (a,(Figure O DUp (b,c):rest),d,e) =       (a,(Figure O DUp (b,screenHeight - 60 ):rest),d,e)
 
 
 -- =========================================
@@ -269,12 +292,48 @@ drawFigure _ = translate (-w) h (scale 30 30 (pictures
 --    w = fromIntegral screenWidth  / 2
 --    h = fromIntegral screenHeight / 2
 drawTetris ::Gamestate-> Picture
-drawTetris (a,Figure O DUp (b,c),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawTetris (a,(Figure O DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
    ]))]
   where
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
+drawTetris (a,(Figure I DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawTetris (a,(Figure T DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawTetris (a,(Figure J DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawTetris (a,(Figure L DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawTetris (a,(Figure S DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2 
+drawTetris (a,(Figure Z DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2   
 
 
 
@@ -338,13 +397,25 @@ updateSpeed _ _ = 0
 --updateTetris :: Float -> Board -> Board
 --updateTetris _ _ =  [[Free]]
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,Figure O DUp (b,c),d,e) | c < screenHeight - 60   =  (a,Figure O DUp (b ,c +1),d,e)
-                                           | otherwise = (a,Figure O DUp (b,c),d,e)
+updateTetris _  (a,(Figure O DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure I DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure T DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure J DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure L DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
 ---------------------------------------------------------------------------------------------------------------------------------------------
 
 --Обновить весь тетрис
 updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
-updateTheWholeTetris _ _ _ =  ([[Free]],Figure O DUp (0,0),0,0)
+updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
 -- ===========================================
 -- timing
 -- =======================================
@@ -355,23 +426,23 @@ updateTheWholeTetris _ _ _ =  ([[Free]],Figure O DUp (0,0),0,0)
 
 --Обновляет общее состояние тетриса
 newTact::Figure -> Board -> Speed -> Gamestate
-newTact _ _ _ =  ([[Free]],Figure O DUp (0,0),0,0)
+newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 --Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
 newMove::Board -> Gamestate
-newMove _ =  ([[Free]],Figure O DUp (0,0),0,0)
+newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 
 --Аргумент функции play, которя говорит, что длает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,Figure O DUp (b,c),d,e) | ((b + 60) < screenWidth) = (a,Figure O DUp (b + 60,c ),d,e)
-                                                                                  | otherwise = (a,Figure O DUp (b,c),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure O DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure O DUp (b + 60,c ):rest),d,e)
+                                                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
              
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,Figure O DUp (b,c),d,e) | ((b - 60 ) > - 1 )  = (a,Figure O DUp (b - 60,c ),d,e)
-                                                                                  | otherwise = (a,Figure O DUp (b,c),d,e)   
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure O DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure O DUp (b - 60,c ):rest),d,e)
+                                                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)   
 handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t = t
-handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,Figure O DUp (b,c),d,e)  = dropit (a,Figure O DUp (b,c),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e)  = dropit (a,(Figure O DUp (b,c):rest),d,e) 
 handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
-handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,Figure O DUp (b,c),d,e) = (a,Figure O DUp (b ,c - 60),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e) = (a,(Figure O DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 handleTetris  _ t = t                                                       
