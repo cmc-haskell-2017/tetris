@@ -16,7 +16,7 @@ run = do
  
  play display bgColor fps (genEmptyBoard g ) drawTetris handleTetris updateTetris
    where
-    display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
+    display = InWindow "Tetris for my branch" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
     fps     = 100    -- кол-во кадров в секунду
 -----------------------------------------------------------------------------------------------------------------------------------------------------
