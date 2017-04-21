@@ -7,7 +7,7 @@ import Graphics.Gloss.Interface.Pure.Game
 import GHC.Float
 
 run :: IO ()
--------------------------------------------------------------------------------------------------------------------------------------------------
+
 --run = putStrLn "This project is not yet implemented"
 run = do
  g <- newStdGen
@@ -16,10 +16,10 @@ run = do
  
  play display bgColor fps (genEmptyBoard g ) drawTetris handleTetris updateTetris
    where
-    display = InWindow "Tetris for my branch" (screenWidth, screenHeight) (200, 200)
+    display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
     fps     = 100    -- кол-во кадров в секунду
------------------------------------------------------------------------------------------------------------------------------------------------------
+
 
 
 -- =========================================
@@ -48,10 +48,13 @@ type Score = Integer
 --их последовательностью
 type Coord = (Int, Int)
 
+--время
+type Time = Float
+
 --Состояние игры в текущий момент(разделили доску и фигуру,
 --чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
 --оптимизировано)
-type Time = Float
+--[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
 type Gamestate = (Board,  [Figure], Speed, Time)
 --data Gamestate = Gamestate
@@ -107,23 +110,21 @@ genFigure a | a== 0  =  Figure O DUp (0,0)
             | a== 5  =  Figure S DUp (0,0)
             | a== 6  =  Figure Z DUp (0,0)
 ------------------------------------------------------------------------------------------------------------------------------------------
--- | Инициализировать одни ворота.
---initGate :: Height -> Gate
---initGate h = (defaultOffset, h)
 
 -- | Инициализировать случайный бесконечный
--- список ворот для игровой вселенной.
+-- список чисел от 0 до 6 которые соответствуют фигурам
 initFigures :: StdGen -> [Figure]
 initFigures g = map genFigure
   (randomRs getrange g)
 
+-- диапазон генерации случайных чисел
 getrange :: (Int, Int)
 getrange = (0, 6)
   
-------------------------------------------------------------------------------------------------------------------------------------------
 
---Заполняем доску пустыми значениями
-------------------------------------------------------------------------------------------------------------------------------------
+
+--Заполняем доску пустыми значениями и генерируем бесконечное количество фигур
+
 --genEmptyBoard::Board
 --genEmptyBoard =  [[Free]]
 genEmptyBoard::StdGen -> Gamestate
@@ -132,6 +133,7 @@ genEmptyBoard g = ([[Free]],initFigures g,0,0)
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --Генерируем бесконечный список из случайных фигур
+-- == initFigures
 generateRandomFigureList:: StdGen -> [Figure]
 generateRandomFigureList _ =  [Figure O DUp (0,0)]
 
@@ -261,6 +263,7 @@ gameover _ =  False
 
 
 --Рисуем доску
+--заглушка
 drawBoard::Board  -> Picture
 drawBoard _ =  translate (-w) h (scale 30 30 (pictures
   [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
@@ -270,7 +273,11 @@ drawBoard _ =  translate (-w) h (scale 30 30 (pictures
   where
     w = fromIntegral screenWidth  / 2
     h = fromIntegral screenHeight / 2
+
+
+
 --Рисуем фигуру
+--заглушка
 drawFigure::Figure  ->  Picture
 drawFigure _ = translate (-w) h (scale 30 30 (pictures
   [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
@@ -280,17 +287,11 @@ drawFigure _ = translate (-w) h (scale 30 30 (pictures
   where
     w = fromIntegral screenWidth  / 2
     h = fromIntegral screenHeight / 2
+
+
+
 --Рисуем тетрис
-----------------------------------------------------------------------------------------------------------------------------------------------------
---drawTetris ::Gamestate-> Picture
---drawTetris _ =  translate (-w) h (scale 30 30 (pictures
---  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
---  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
---  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
---  ]))
---  where
---    w = fromIntegral screenWidth  / 2
---    h = fromIntegral screenHeight / 2
+--Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
 drawTetris (a,(Figure O DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
@@ -359,6 +360,7 @@ drawTetris (a,(Figure Z DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (sca
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------
 --Рисуем блок
+--заглушка
 drawBlock :: Block-> Picture
 drawBlock _ =  translate (-w) h (scale 30 30 (pictures
   [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
@@ -378,11 +380,12 @@ drawBlock _ =  translate (-w) h (scale 30 30 (pictures
 --Проверяет, достигла ли нижняя часть фигуры нижней 
 --границы доски или другой фигуры: делаем xor доски и фигуры,
 --если количество свободных блоков одно и то же, то не достигла, иначе
---достигла
+--достигла Пока она реализована в updateTetris
 collidesFloor::Gamestate -> Bool
 collidesFloor _ =  False
 --Проверяет, не выходит ли правая или левая часть фигуры за правую или
 -- левую часть доски соответственно
+--пока реализована в обраюотчиках клавиш
 collidesSide::Gamestate -> Bool
 collidesSide _ =  False
 --Делает пустые блоки доски, на в которых находится фигура заполненными,
@@ -392,10 +395,11 @@ updateBoard _ _ =  [[Free]]
 --На основании прошедшего времени меняет скорость полета фигур
 updateSpeed::Time -> Speed -> Speed
 updateSpeed _ _ = 0
+
+
 --Аргумент функции play, обновляет состояние тетриса
---------------------------------------------------------------------------------------------------------------------------------------------
---updateTetris :: Float -> Board -> Board
---updateTetris _ _ =  [[Free]]
+--С каждым кадром двигает фигуру вниз и пока здесь же проверяет, не достигла ли фигура нижней границы
+
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris _  (a,(Figure O DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
                                            | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
@@ -411,7 +415,7 @@ updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (
                                            | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
                                            | otherwise = (a,(Figure O DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
----------------------------------------------------------------------------------------------------------------------------------------------
+
 
 --Обновить весь тетрис
 updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
@@ -432,7 +436,8 @@ newMove::Board -> Gamestate
 newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 
---Аргумент функции play, которя говорит, что длает каждая клавиша
+--Аргумент функции play, которая говорит, что длает каждая клавиша
+-- и пока здесь же проверяет, не достигла ли фигура левой и правой границы
 handleTetris :: Event -> Gamestate -> Gamestate
 handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure O DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure O DUp (b + 60,c ):rest),d,e)
                                                                                   | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
