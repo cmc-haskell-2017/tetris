@@ -18,7 +18,7 @@ run = do
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 75    -- кол-во кадров в секунду
+    fps     = 5    -- кол-во кадров в секунду
 
 
 
@@ -283,12 +283,12 @@ collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlo
 
 --При нажатии клавиши "вниз" роняет фигуру 
 
-
 dropit::Gamestate -> Gamestate
 dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c)):rest),d,e)                                             
                                              | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)                                         
                                           where                                           
-                                              collide = collidesFigure (figureToDraw (Figure sha dir (b,c + blockSize)))
+                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize))) a
+
 
 -- dropit::Gamestate -> Gamestate
 -- dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
@@ -299,6 +299,20 @@ dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,
 
 -----------------------------------------------------------------------------------------------------------------
 --Смотрит, нет ли строк, которые можно удалить
+
+
+deleteRows :: Board -> Board
+deleteRows [] = []
+deleteRows ((brda,brdb):brds)
+
+
+                               |   (length    (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) == 10)  =  (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+            
+
+                                | otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds))   ++      (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+
+--                                |   otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) : (deleteRows (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+
 --checkRowsToDelete::Board -> [Bool]
 --checkRowsToDelete (r:[]) =  (checkRow r):[]
 --checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
@@ -308,11 +322,11 @@ dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,
 --checkRow (Free:[]) = False
 --checkRow (Full:[]) = True
 --checkRow (c:cs)  | c == Free = False
-       --          | otherwise =  checkRow cs
+ --                | otherwise =  checkRow cs
 --Удаляет строку
 --deleteRow::[Bool] -> Board -> Board
---deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
-  --  | otherwise = (deleteRow bs rs)                                  
+--deleteRow (b:bs) (r:rs)   | b == False = r:(deleteRow bs rs)
+--                          | otherwise = (deleteRow bs rs)                                  
 
 --------------------------------------------------------------------------------------------------------------
 --gameover :: Gamestate -> Bool
@@ -407,8 +421,8 @@ updateSpeed _ _ = 0
 
 
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | collide   =  (updateBoard (Figure sha dir (b ,c)) a, rest, d, e)
-                                                  | otherwise = (a,(Figure sha dir (b,c + blockSize):rest),d,e)
+updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | collide   =  (deleteRows (updateBoard (Figure sha dir (b ,c)) a), rest, d, e)
+                                                    | otherwise = (a,(Figure sha dir (b,c + blockSize):rest),d,e)
                                                     where
                                                       collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize)))   a
 
