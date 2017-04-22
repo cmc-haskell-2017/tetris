@@ -166,10 +166,22 @@ type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 
 turn::Gamestate -> Gamestate
-turn (a,(Figure t DUp c):rest,d,e) = (a,(Figure t DRight c):rest,d,e)
-turn (a,(Figure t DRight c):rest,d,e) = (a,(Figure t DDown c):rest,d,e)
-turn (a,(Figure t DDown c):rest,d,e) = (a,(Figure t DLeft c):rest,d,e)
-turn (a,(Figure t DLeft c):rest,d,e)  = (a,(Figure t DUp c):rest,d,e)
+turn (a,(Figure t DUp c):rest,d,e) | collide1 = (a,(Figure t DUp c):rest,d,e)
+                                   | otherwise = (a,(Figure t DRight c):rest,d,e)
+                            where 
+                                collide1 = collidesFigure (figureToDraw (Figure t DRight c))
+turn (a,(Figure t DRight c):rest,d,e) | collide2 = (a,(Figure t DRight c):rest,d,e)
+                                      | otherwise = (a,(Figure t DDown c):rest,d,e)
+                            where 
+                                collide2 = collidesFigure (figureToDraw (Figure t DDown c))
+turn (a,(Figure t DDown c):rest,d,e) | collide3 = (a,(Figure t DDown c):rest,d,e)
+                                     | otherwise = (a,(Figure t DLeft c):rest,d,e)
+                            where 
+                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c))
+turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e)
+                                     | otherwise = (a,(Figure t DUp c):rest,d,e)
+                            where 
+                                collide4 = collidesFigure (figureToDraw (Figure t DUp c))
 
 figureToDraw::Figure->BlockedFigure
 figureToDraw (Figure O d c) = figureToDrawO (Figure O d c)
@@ -229,31 +241,60 @@ moveLeft::Gamestate -> Gamestate
 moveLeft (a,((Figure s t (b,c)):rest),d,e) | collide = (a, ((Figure s t (b,c)):rest),d,e)
         |otherwise = (a, ((Figure s t (b - blockSize,c)):rest),d,e)
   where 
-    collide = collidesFigure (figureToDraw (Figure s t (b - blockSize,c)))
+    collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c)))
 
 moveRight::Gamestate -> Gamestate
 moveRight (a,(Figure s t (b,c)):rest,d,e) | collide = (a, ((Figure s t (b,c)):rest),d,e)
         |otherwise = (a, ((Figure s t (b + blockSize,c)):rest),d,e)
   where 
-    collide = collidesFigure (figureToDraw (Figure s t (b + blockSize,c)))
+    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c)))
 
-
-collidesFigure::BlockedFigure -> Bool
-collidesFigure (a,b,c,d ) | (collidesBlock a) || (collidesBlock b) || (collidesBlock c) || (collidesBlock d) = True
-        |otherwise = False
 
 collidesBlock::Coord -> Bool
 collidesBlock (a,b) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
 
 
+collidesBlockSides::Coord -> Bool
+collidesBlockSides (a,b) | (a < 0) || (a  + blockSize > screenWidth) = True
+       |otherwise = False
+
+
+collidesBlockDown::Coord -> Bool
+collidesBlockDown (a,b) | (b + blockSize > screenHeight) = True
+       |otherwise = False
+
+
+collidesFigure::BlockedFigure -> Bool
+collidesFigure (a,b,c,d ) | (collidesBlock a) || (collidesBlock b) || (collidesBlock c) || (collidesBlock d) = True
+        |otherwise = False
+
+
+collidesFigureSides::BlockedFigure -> Bool
+collidesFigureSides (a,b,c,d ) | (collidesBlockSides a) || (collidesBlockSides b) || (collidesBlockSides c) || (collidesBlockSides d) = True
+        |otherwise = False
+
+
+collidesFigureDown::BlockedFigure -> Bool
+collidesFigureDown (a,b,c,d ) | (collidesBlockDown a) || (collidesBlockDown b) || (collidesBlockDown c) || (collidesBlockDown d) = True
+        |otherwise = False
+
+
+
 --При нажатии клавиши "вниз" роняет фигуру 
 
+
 dropit::Gamestate -> Gamestate
-dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
-                                             | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
-                                          where
-                                            collide = collidesFigure (figureToDraw (Figure sha dir (b,c + 2*blockSize)))
+dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c)):rest),d,e)                                             
+                                             | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)                                         
+                                          where                                           
+                                              collide = collidesFigure (figureToDraw (Figure sha dir (b,c + blockSize)))
+
+-- dropit::Gamestate -> Gamestate
+-- dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
+--                                              | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
+--                                           where
+--                                             collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + 2*blockSize)))
 
 
 -----------------------------------------------------------------------------------------------------------------
@@ -361,7 +402,7 @@ updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | collide   =  (a,(Figure sha dir (b ,c):rest),d,e)
                                                   | otherwise = (a,(Figure sha dir (b,c + 1):rest),d,e)
                                                     where
-                                                      collide =  collidesFigure (figureToDraw (Figure sha dir (b ,c + 1)))
+                                                      collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + 1)))
 
 --Обновить весь тетрис
 updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
