@@ -128,9 +128,9 @@ getrange = (0, 6)
 
 genEmptyBoard::Board
 genEmptyBoard = genRows width height
-				where
-					width = 10
-					height = 20
+        where
+          width = 10
+          height = 20
 
 genRows::Int->Int->[Row]
 genRows _ 0 = []
@@ -318,47 +318,46 @@ drawBoard _ =  translate (-w) h (scale 30 30 (pictures
 --Рисуем фигуру
 --заглушка
 drawFigure::Gamestate  ->  Picture
-drawFigure (a,(Figure O DUp (b,c):rest),d,e) = pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+drawFigure (a,(Figure O DUp (b,c):rest),d,e) = pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure I DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+drawFigure (a,(Figure I DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 60):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 90):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure T DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+drawFigure (a,(Figure T DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 60,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b ,c):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure J DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+drawFigure (a,(Figure J DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b+ 30,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b+ 30,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b+ 30,c + 60):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 60):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure L DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+drawFigure (a,(Figure L DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c + 60):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 60):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure S DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+drawFigure (a,(Figure S DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b+ 30,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b+ 30,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 60,c):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
     
                                                        ]
-drawFigure (a,(Figure Z DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
-                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
-    
+drawFigure (a,(Figure Z DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b+ 30,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b+ 30,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 60 ,c + 30):rest),d,e)
                                                        ]
 
 
@@ -396,7 +395,7 @@ drawTetris u = pictures
 --Рисуем блок
 drawBlock :: Gamestate-> Picture
 drawBlock (a,(Figure O DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30,fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ]))]
   where
   w = fromIntegral screenWidth  / 2
@@ -469,18 +468,18 @@ updateSpeed _ _ = 0
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris _  (a,(Figure O DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
                                                   | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure I DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure T DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure J DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure L DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
-updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
+updateTetris _  (a,(Figure I DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure I DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure I DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure T DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure T DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure T DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure J DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure J DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure J DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure L DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure L DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure L DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure S DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure S DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure Z DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure Z DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
 
 
 --Обновить весь тетрис
@@ -516,14 +515,4 @@ handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e) = (a,(Figure O DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 handleTetris  _ t = t  
-
-
-
-
-
-
-
-
-
-
 
