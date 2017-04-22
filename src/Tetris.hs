@@ -177,11 +177,13 @@ generateRandomFigureList _ =  [Figure O DUp (0,0)]
 type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 
-turn::Figure -> Figure
-turn (Figure t DUp c) = Figure t DRight c
-turn (Figure t DRight c) = Figure t DDown c
-turn (Figure t DDown c) = Figure t DLeft c
-turn (Figure t DLeft c) = Figure t DUp c
+turn::Gamestate -> Gamestate
+
+
+turn (a,(Figure t DUp c):rest,d,e) = (a,(Figure t DRight c):rest,d,e)
+turn (a,(Figure t DRight c):rest,d,e) = (a,(Figure t DDown c):rest,d,e)
+turn (a,(Figure t DDown c):rest,d,e) = (a,(Figure t DLeft c):rest,d,e)
+turn (a,(Figure t DLeft c):rest,d,e)  = (a,(Figure t DUp c):rest,d,e)
 
 
 
@@ -640,6 +642,7 @@ handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure Z DUp (b,c):rest
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 
 
+handleTetris (EventKey (SpecialKey KeySpace) Down _ _) t = t
 
 
 handleTetris  _ t = t  
