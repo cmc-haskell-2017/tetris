@@ -240,14 +240,50 @@ moveLeft::Gamestate -> Gamestate
 --moveLeft _ =  Figure O DUp (0,0)
 moveLeft (a,(Figure O DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure O DUp (b - 60,c ):rest),d,e)
                                            | otherwise = (a,(Figure O DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure I DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure I DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure I DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure T DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure T DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure T DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure L DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure L DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure L DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure J DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure J DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure J DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure S DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure S DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure S DUp (b,c):rest),d,e)  
+moveLeft (a,(Figure Z DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure Z DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure Z DUp (b,c):rest),d,e)  
+
+
+
 --Перемещает фигуру вправо
 moveRight::Gamestate -> Gamestate
 --moveRight _ =  Figure O DUp (0,0)
 moveRight (a,(Figure O DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure O DUp (b + 60,c ):rest),d,e)
-                                                                                         | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                            | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+moveRight (a,(Figure I DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure I DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure I DUp (b,c):rest),d,e)
+moveRight (a,(Figure T DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure T DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure T DUp (b,c):rest),d,e)
+moveRight (a,(Figure L DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure L DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure L DUp (b,c):rest),d,e)
+moveRight (a,(Figure J DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure J DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure J DUp (b,c):rest),d,e)
+moveRight (a,(Figure S DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure S DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure S DUp (b,c):rest),d,e)
+moveRight (a,(Figure Z DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure Z DUp (b + 60,c ):rest),d,e)
+                                            | otherwise = (a,(Figure Z DUp (b,c):rest),d,e)
+
+
+
 --При нажатии клавиши "вниз" роняет фигуру 
 dropit::Gamestate -> Gamestate
 dropit  (a,(Figure O DUp (b,c):rest),d,e) =       (a,(Figure O DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure I DUp (b,c):rest),d,e) =       (a,(Figure I DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure T DUp (b,c):rest),d,e) =       (a,(Figure T DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure L DUp (b,c):rest),d,e) =       (a,(Figure L DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure J DUp (b,c):rest),d,e) =       (a,(Figure J DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure S DUp (b,c):rest),d,e) =       (a,(Figure S DUp (b,screenHeight - 60 ):rest),d,e)
+dropit  (a,(Figure Z DUp (b,c):rest),d,e) =       (a,(Figure Z DUp (b,screenHeight - 60 ):rest),d,e)
 
 
 -- =========================================
@@ -503,6 +539,9 @@ newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
+
+-- Shape O
+
 handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure O DUp (b,c):rest),d,e) = moveRight (a,(Figure O DUp (b,c):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
              
@@ -514,5 +553,94 @@ handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e) = (a,(Figure O DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+
+-- Shape I
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure I DUp (b,c):rest),d,e) = moveRight (a,(Figure I DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure I DUp (b,c):rest),d,e)  = moveLeft (a,(Figure I DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure I DUp (b,c):rest),d,e)  = dropit (a,(Figure I DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure I DUp (b,c):rest),d,e) = (a,(Figure I DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+-- Shape T
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure T DUp (b,c):rest),d,e) = moveRight (a,(Figure T DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure T DUp (b,c):rest),d,e)  = moveLeft (a,(Figure T DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure T DUp (b,c):rest),d,e)  = dropit (a,(Figure T DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure T DUp (b,c):rest),d,e) = (a,(Figure T DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+-- Shape L
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure L DUp (b,c):rest),d,e) = moveRight (a,(Figure L DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure L DUp (b,c):rest),d,e)  = moveLeft (a,(Figure L DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure L DUp (b,c):rest),d,e)  = dropit (a,(Figure L DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure L DUp (b,c):rest),d,e) = (a,(Figure L DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+-- Shape J
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure J DUp (b,c):rest),d,e) = moveRight (a,(Figure J DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure J DUp (b,c):rest),d,e)  = moveLeft (a,(Figure J DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure J DUp (b,c):rest),d,e)  = dropit (a,(Figure J DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure J DUp (b,c):rest),d,e) = (a,(Figure J DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+-- Shape S
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure S DUp (b,c):rest),d,e) = moveRight (a,(Figure S DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure S DUp (b,c):rest),d,e)  = moveLeft (a,(Figure S DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure S DUp (b,c):rest),d,e)  = dropit (a,(Figure S DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure S DUp (b,c):rest),d,e) = (a,(Figure S DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+-- Shape Z
+
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure Z DUp (b,c):rest),d,e) = moveRight (a,(Figure Z DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+             
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure Z DUp (b,c):rest),d,e)  = moveLeft (a,(Figure Z DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
+handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure Z DUp (b,c):rest),d,e)  = dropit (a,(Figure Z DUp (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
+handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure Z DUp (b,c):rest),d,e) = (a,(Figure Z DUp (b ,c - 60):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+
+
+
+
 handleTetris  _ t = t  
 
