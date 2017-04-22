@@ -18,7 +18,7 @@ run = do
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 100    -- кол-во кадров в секунду
+    fps     = 5    -- кол-во кадров в секунду
 
 
 
@@ -43,7 +43,7 @@ data Block = Free | Full
 type Row = [Block]
 
 --Все поле
-type Board = [Row]
+type Board = [Coord]
 
 --Счет
 type Score = Integer
@@ -126,10 +126,7 @@ getrange = (0, 6)
 --Заполняем доску пустыми значениями и генерируем бесконечное количество фигур
 
 genEmptyBoard::Board
-genEmptyBoard = genRows width height
-        where
-          width = 10
-          height = 20
+genEmptyBoard = []
 
 genRows::Int->Int->[Row]
 genRows _ 0 = []
@@ -260,9 +257,12 @@ collidesBlockSides (a,b) | (a < 0) || (a  + blockSize > screenWidth) = True
        |otherwise = False
 
 
-collidesBlockDown::Coord -> Bool
-collidesBlockDown (a,b) | (b + blockSize > screenHeight) = True
-       |otherwise = False
+collidesBlockDown::Coord -> Board-> Bool
+collidesBlockDown (a,b) []  =   (b + blockSize > screenHeight)
+collidesBlockDown (a,b) ((brda,brdb):[])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
+collidesBlockDown (a,b) ((brda,brdb):brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
+                                            |  otherwise = collidesBlockDown (a,b) brds
+--collidesBlockDown (a,b) ((brda,brdb):brds) = True
 
 
 collidesFigure::BlockedFigure -> Bool
@@ -275,20 +275,24 @@ collidesFigureSides (a,b,c,d ) | (collidesBlockSides a) || (collidesBlockSides b
         |otherwise = False
 
 
-collidesFigureDown::BlockedFigure -> Bool
-collidesFigureDown (a,b,c,d ) | (collidesBlockDown a) || (collidesBlockDown b) || (collidesBlockDown c) || (collidesBlockDown d) = True
+collidesFigureDown::BlockedFigure -> Board -> Bool
+collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) || (collidesBlockDown d board) = True
         |otherwise = False
+
+
+isGameOver::Gamestate -> Bool
+isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
 
 
 
 --При нажатии клавиши "вниз" роняет фигуру 
 
-
 dropit::Gamestate -> Gamestate
 dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c)):rest),d,e)                                             
                                              | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)                                         
                                           where                                           
-                                              collide = collidesFigure (figureToDraw (Figure sha dir (b,c + blockSize)))
+                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize))) a
+
 
 -- dropit::Gamestate -> Gamestate
 -- dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
@@ -299,24 +303,38 @@ dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,
 
 -----------------------------------------------------------------------------------------------------------------
 --Смотрит, нет ли строк, которые можно удалить
-checkRowsToDelete::Board -> [Bool]
-checkRowsToDelete (r:[]) =  (checkRow r):[]
-checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
+
+
+deleteRows :: Board -> Board
+deleteRows [] = []
+deleteRows ((brda,brdb):brds)
+
+
+                               |   (length    (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) == 10)  =  (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+            
+
+                                | otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds))   ++      (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+
+--                                |   otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) : (deleteRows (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+
+--checkRowsToDelete::Board -> [Bool]
+--checkRowsToDelete (r:[]) =  (checkRow r):[]
+--checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
 
 --Смотрит, можно ли удаоить строку
-checkRow::Row -> Bool
-checkRow (Free:[]) = False
-checkRow (Full:[]) = True
-checkRow (c:cs)  | c == Free = False
-                 | otherwise =  checkRow cs
+--checkRow::Row -> Bool
+--checkRow (Free:[]) = False
+--checkRow (Full:[]) = True
+--checkRow (c:cs)  | c == Free = False
+ --                | otherwise =  checkRow cs
 --Удаляет строку
-deleteRow::[Bool] -> Board -> Board
-deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
-    | otherwise = (deleteRow bs rs)                                  
+--deleteRow::[Bool] -> Board -> Board
+--deleteRow (b:bs) (r:rs)   | b == False = r:(deleteRow bs rs)
+--                          | otherwise = (deleteRow bs rs)                                  
 
 --------------------------------------------------------------------------------------------------------------
-gameover :: Gamestate -> Bool
-gameover _ =  False
+--gameover :: Gamestate -> Bool
+--gameover _ =  False
 
 
 
@@ -330,16 +348,18 @@ gameover _ =  False
 
 --Рисуем доску
 --заглушка
-drawBoard::Board  -> Picture
-drawBoard _ =  translate (-w) h (scale 30 30 (pictures
-  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
-  ]))
-  where
-    w = fromIntegral screenWidth  / 2
-    h = fromIntegral screenHeight / 2
+--drawBoard::Board  -> Picture
+--drawBoard _ =  translate (-w) h (scale 30 30 (pictures
+--  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
+--  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
+--  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
+--  ]))
+--  where
+--    w = fromIntegral screenWidth  / 2
+--    h = fromIntegral screenHeight / 2
 
+drawBoard::Board  -> Picture
+drawBoard s = pictures (map drawBlock s)
 
 drawBlock :: Coord-> Picture
 drawBlock (b,c) =  pictures [ translate (-w) h (scale  1 1 (pictures
@@ -365,8 +385,9 @@ drawBlockedFigure ((a, b, c, d)) = pictures [da, db, dc, dd ]
 --Рисуем тетрис
 --Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
-drawTetris u = pictures
-  [ drawFigure u
+drawTetris (b,fs,s,t) = pictures
+  [ drawFigure (b,fs,s,t),
+    drawBoard b
   ] 
 
 -- =========================================
@@ -387,8 +408,13 @@ collidesSide::Gamestate -> Bool
 collidesSide _ =  False
 --Делает пустые блоки доски, на в которых находится фигура заполненными,
 --вызываем ее после падения фигуры
+
+vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
+vectolist (a,b,c,d) = [a,b,c,d]
+
 updateBoard::Figure -> Board ->Board
-updateBoard _ _ =  [[Free]]
+updateBoard (Figure sha dir (b ,c)) a = a ++ vectolist (figureToDraw (Figure sha dir (b ,c)))
+
 --На основании прошедшего времени меняет скорость полета фигур
 updateSpeed::Time -> Speed -> Speed
 updateSpeed _ _ = 0
@@ -399,10 +425,12 @@ updateSpeed _ _ = 0
 
 
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | collide   =  (a,(Figure sha dir (b ,c):rest),d,e)
-                                                  | otherwise = (a,(Figure sha dir (b,c + 1):rest),d,e)
-                                                    where
-                                                      collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + 1)))
+updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | gameover = (genEmptyBoard,rest,d,e)
+                                                    | collide   =  (updateBoard (Figure sha dir (b ,c)) a, rest, d, e)
+                                                    | otherwise = (a,(Figure sha dir (b,c + blockSize):rest),d,e)
+                                                       where
+                                                       collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize)))   a
+                                                       gameover = isGameOver (a,(Figure sha dir (b,c):rest),d,e)
 
 --Обновить весь тетрис
 updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
@@ -413,11 +441,11 @@ updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
 
 
 --Обновляет общее состояние тетриса
-newTact::Figure -> Board -> Speed -> Gamestate
-newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
+--newTact::Figure -> Board -> Speed -> Gamestate
+--newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 --Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
-newMove::Board -> Gamestate
-newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
+--newMove::Board -> Gamestate
+--newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
