@@ -18,7 +18,7 @@ run = do
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 10    -- кол-во кадров в секунду
+    fps     = 5    -- кол-во кадров в секунду
 
 
 
@@ -297,7 +297,7 @@ isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
 deleteRows :: Board -> Board
 deleteRows [] = []
 deleteRows ((brda,brdb):brds) | (length (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) == 10)  =  (deleteRows (map (\(x,y) -> (x, y + blockSize)) (filter (\(x,y) -> y < brdb) l)) ++ (filter (\(x,y) -> y > brdb) l))
-                              | otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) ++ (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))
+                              | otherwise = (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) ++ (deleteRows  (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds)))                  -----   ToDo:   Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
                          where l = (filter (\(x,y) -> brdb /= y) ((brda,brdb):brds))
 
 --При нажатии клавиши "вниз" роняет фигуру 
