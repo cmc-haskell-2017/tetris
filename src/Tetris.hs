@@ -34,6 +34,7 @@ run = do
                                --         deriving (Eq, Show, Enum)
 --Клетка заполнена?
 data Block = Free | Full
+         deriving(Eq, Show)
 
 --Строки нашей доски
 type Row = [Block]
@@ -257,16 +258,36 @@ dropit  (a,(Figure O DUp (b,c):rest),d,e) =       (a,(Figure O DUp (b,screenHeig
 
 
 --Смотрит, нет ли строк, которые можно удалить
-checkRowsToDelete::Board -> [Bool]
-checkRowsToDelete _ =  [False]
+--checkRowsToDelete::Board -> [Bool]
+--checkRowsToDelete _ =  [False]
 --Смотрит, можно ли удаоить строку
-checkRow::Row -> Bool
-checkRow _ =  False
+--checkRow::Row -> Bool
+--checkRow _ =  False
 --Удаляет строку
-deleteRow::Int -> Board -> Board
-deleteRow _ _=  [[Free]]
+--deleteRow::Int -> Board -> Board
+--deleteRow _ _=  [[Free]]
 --проверяет, конец игру т.е. приземлилась ли фигура до появления на
 --экране, т.е. конец игры
+
+
+-----------------------------------------------------------------------------------------------------------------
+--Смотрит, нет ли строк, которые можно удалить
+checkRowsToDelete::Board -> [Bool]
+checkRowsToDelete (r:[]) =  (checkRow r):[]
+checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
+
+--Смотрит, можно ли удаоить строку
+checkRow::Row -> Bool
+checkRow (Free:[]) = False
+checkRow (Full:[]) = True
+checkRow (c:cs)  | c == Free = False
+                 | otherwise =  checkRow cs
+--Удаляет строку
+deleteRow::[Bool] -> Board -> Board
+deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
+    | otherwise = (deleteRow bs rs)                                  
+
+--------------------------------------------------------------------------------------------------------------
 gameover :: Gamestate -> Bool
 gameover _ =  False
 
@@ -296,63 +317,58 @@ drawBoard _ =  translate (-w) h (scale 30 30 (pictures
 
 --Рисуем фигуру
 --заглушка
-drawFigure::Figure  ->  Picture
-drawFigure _ = translate (-w) h (scale 30 30 (pictures
-  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
-  ]))
-  where
-    w = fromIntegral screenWidth  / 2
-    h = fromIntegral screenHeight / 2
+drawFigure::Gamestate  ->  Picture
+drawFigure (a,(Figure O DUp (b,c):rest),d,e) = pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure I DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure T DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure J DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure L DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure S DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
+drawFigure (a,(Figure Z DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30,c):rest),d,e)
+                                                         drawBlock (a,(Figure O DUp (b + 30 ,c + 30):rest),d,e)
+    
+                                                       ]
 
 
 
 --Рисуем тетрис
 --Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
-drawTetris (a,(Figure O DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawTetris (a,(Figure I DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawTetris (a,(Figure T DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawTetris (a,(Figure J DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawTetris (a,(Figure L DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawTetris (a,(Figure S DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2 
-drawTetris (a,(Figure Z DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (-c - 60)), (fromIntegral  (b + 60),fromIntegral (- c)) ])            -- белая рамка
-   ]))]
-  where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2   
+drawTetris u = pictures
+  [ drawFigure u
+  ]
 
 
 
@@ -378,17 +394,49 @@ drawTetris (a,(Figure Z DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (sca
 
 ---------------------------------------------------------------------------------------------------------------------------------------------------
 --Рисуем блок
---заглушка
-drawBlock :: Block-> Picture
-drawBlock _ =  translate (-w) h (scale 30 30 (pictures
-  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
-  ]))
+drawBlock :: Gamestate-> Picture
+drawBlock (a,(Figure O DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30,fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
   where
-    w = fromIntegral screenWidth  / 2
-    h = fromIntegral screenHeight / 2
-
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawBlock (a,(Figure I DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawBlock (a,(Figure T DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawBlock (a,(Figure J DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawBlock (a,(Figure L DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2
+drawBlock (a,(Figure S DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2 
+drawBlock (a,(Figure Z DUp (b,c):rest),d,e) =  pictures [ translate (-w) h (scale  1 1 (pictures
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
+   ]))]
+  where
+  w = fromIntegral screenWidth  / 2
+  h = fromIntegral screenHeight / 2   
 
 -- =========================================
 -- Updating
@@ -467,4 +515,15 @@ handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e) = (a,(Figure O DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
-handleTetris  _ t = t                                                       
+handleTetris  _ t = t  
+
+
+
+
+
+
+
+
+
+
+
