@@ -14,7 +14,7 @@ run = do
 
    --putStrLn "This project is not yet implemented"
  
- play display bgColor fps (genEmptyBoard g ) drawTetris handleTetris updateTetris
+ play display bgColor fps (genUniverse g ) drawTetris handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
@@ -125,10 +125,24 @@ getrange = (0, 6)
 
 --Заполняем доску пустыми значениями и генерируем бесконечное количество фигур
 
---genEmptyBoard::Board
---genEmptyBoard =  [[Free]]
-genEmptyBoard::StdGen -> Gamestate
-genEmptyBoard g = ([[Free]],initFigures g,0,0)
+genEmptyBoard::Board
+genEmptyBoard = genRows width height
+				where
+					width = 10
+					height = 20
+
+genRows::Int->Int->[Row]
+genRows _ 0 = []
+genRows w h = (genRows w (h-1)) ++ [genRow w]
+
+
+genRow::Int->Row
+genRow 0 = []
+genRow w = (genRow (w-1)) ++ [Free]
+
+
+genUniverse::StdGen -> Gamestate
+genUniverse g = (genEmptyBoard,initFigures g,0,0)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
