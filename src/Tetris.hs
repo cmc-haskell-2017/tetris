@@ -221,11 +221,15 @@ figureToDrawT (Figure T d (x,y)) | d == DDown = ((x-1, y), (x, y), (x+1, y), (x,
 startGame::Board -> Score
 startGame  _ =  0
 --Переещает фигуру влево  
-moveLeft::Figure -> Figure
-moveLeft _ =  Figure O DUp (0,0)
+moveLeft::Gamestate -> Gamestate
+--moveLeft _ =  Figure O DUp (0,0)
+moveLeft (a,(Figure O DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure O DUp (b - 60,c ):rest),d,e)
+                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)  
 --Перемещает фигуру вправо
-moveRight::Figure -> Figure
-moveRight _ =  Figure O DUp (0,0)
+moveRight::Gamestate -> Gamestate
+--moveRight _ =  Figure O DUp (0,0)
+moveRight (a,(Figure O DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure O DUp (b + 60,c ):rest),d,e)
+                                                                                         | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 --При нажатии клавиши "вниз" роняет фигуру 
 dropit::Gamestate -> Gamestate
 dropit  (a,(Figure O DUp (b,c):rest),d,e) =       (a,(Figure O DUp (b,screenHeight - 60 ):rest),d,e)
@@ -402,19 +406,19 @@ updateSpeed _ _ = 0
 
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris _  (a,(Figure O DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure I DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure T DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure J DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure L DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure O DUp (b ,c +1):rest),d,e)
-                                           | otherwise = (a,(Figure O DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
+                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
 
 
 --Обновить весь тетрис
@@ -437,17 +441,16 @@ newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
--- и пока здесь же проверяет, не достигла ли фигура левой и правой границы
 handleTetris :: Event -> Gamestate -> Gamestate
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure O DUp (b,c):rest),d,e) | ((b + 60) < screenWidth) = (a,(Figure O DUp (b + 60,c ):rest),d,e)
-                                                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)
+handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure O DUp (b,c):rest),d,e) = moveRight (a,(Figure O DUp (b,c):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
              
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure O DUp (b,c):rest),d,e) | ((b - 60 ) > - 1 )  = (a,(Figure O DUp (b - 60,c ):rest),d,e)
-                                                                                  | otherwise = (a,(Figure O DUp (b,c):rest),d,e)   
-handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t = t
+handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure O DUp (b,c):rest),d,e)  = moveLeft (a,(Figure O DUp (b,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+
 handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e)  = dropit (a,(Figure O DUp (b,c):rest),d,e) 
 handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure O DUp (b,c):rest),d,e) = (a,(Figure O DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 handleTetris  _ t = t                                                       
