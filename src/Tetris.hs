@@ -178,20 +178,10 @@ type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 
 turn::Gamestate -> Gamestate
-<<<<<<< HEAD
-
-
-=======
->>>>>>> I is perfect
 turn (a,(Figure t DUp c):rest,d,e) = (a,(Figure t DRight c):rest,d,e)
 turn (a,(Figure t DRight c):rest,d,e) = (a,(Figure t DDown c):rest,d,e)
 turn (a,(Figure t DDown c):rest,d,e) = (a,(Figure t DLeft c):rest,d,e)
 turn (a,(Figure t DLeft c):rest,d,e)  = (a,(Figure t DUp c):rest,d,e)
-<<<<<<< HEAD
-
-
-=======
->>>>>>> I is perfect
 
 figureToDraw::Figure->BlockedFigure
 figureToDraw (Figure O d c) = figureToDrawO (Figure O d c)
@@ -400,14 +390,40 @@ drawFigure (a,(Figure T DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O
                                                          drawBlock (a,(Figure O DUp (b + 30,c + 30):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b + 60,c):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b ,c):rest),d,e)
+                                                         ]
+drawFigure (a,(Figure T DLeft (b,c):rest),d,e) = pictures[ drawBlock (a,(Figure O DUp (b ,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c ):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b +30 ,c + 60):rest),d,e)                                                         
     
                                                        ]
+drawFigure (a,(Figure T DRight (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b ,c):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b ,c + 30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b ,c+60):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b+30 ,c+30):rest),d,e)                                                         
+    
+                                                       ]
+drawFigure (a,(Figure T DDown (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b ,c+30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c ):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b + 30,c+30):rest),d,e),
+                                                         drawBlock (a,(Figure O DUp (b +60,c+30):rest),d,e)                                                         
+    
+                                                       ]                                                       
+
+
+
+
+
+
 drawFigure (a,(Figure J DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b+ 30,c):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b+ 30,c + 30):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b+ 30,c + 60):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b,c + 60):rest),d,e)
     
                                                        ]
+
+
+                                                                                                                                                                                                                            
 drawFigure (a,(Figure L DUp (b,c):rest),d,e) =  pictures[ drawBlock (a,(Figure O DUp (b,c):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b,c + 30):rest),d,e),
                                                          drawBlock (a,(Figure O DUp (b,c + 60):rest),d,e),
@@ -539,10 +555,70 @@ updateTetris _  (a,(Figure I DUp (b,c):rest),d,e) | c < screenHeight - 120   =  
                                                   | otherwise = (a,(Figure I DUp (b,c):rest),d,e)
 updateTetris _  (a,(Figure I DDown (b,c):rest),d,e) | c < screenHeight - 120   =  (a,(Figure I DDown (b ,c +1):rest),d,e)
                                                     | otherwise = (a,(Figure I DDown (b,c):rest),d,e)
-updateTetris _  (a,(Figure I DLeft (b,c):rest),d,e) | c < screenHeight - 30   =  (a,(Figure I DLeft (b ,c +1):rest),d,e)
+updateTetris _  (a,(Figure I DLeft (b,c):rest),d,e) | c < screenHeight - 120   =  (a,(Figure I DLeft (b ,c +1):rest),d,e)
                                                     | otherwise = (a,(Figure I DLeft (b,c):rest),d,e)
-updateTetris _  (a,(Figure I DRight (b,c):rest),d,e)  | c < screenHeight - 30   =  (a,(Figure I DRight (b ,c +1):rest),d,e)
+updateTetris _  (a,(Figure I DRight (b,c):rest),d,e)  | c < screenHeight - 120   =  (a,(Figure I DRight (b ,c +1):rest),d,e)
                                                       | otherwise = (a,(Figure I DRight (b,c):rest),d,e)
+
+
+updateTetris _  (a,(Figure T DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure T DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure T DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure T DDown (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure T DDown (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure T DDown (b,c):rest),d,e)
+updateTetris _  (a,(Figure T DLeft (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure T DLeft (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure T DLeft (b,c):rest),d,e)                                                  
+updateTetris _  (a,(Figure T DRight (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure T DRight (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure T DRight (b,c):rest),d,e)
+
+
+
+updateTetris _  (a,(Figure J DUp (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure J DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure J DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure J DDown (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure J DDown (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure J DDown(b,c):rest),d,e)
+updateTetris _  (a,(Figure J DLeft (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure J DLeft (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure J DLeft (b,c):rest),d,e)
+updateTetris _  (a,(Figure J DRight (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure J DRight (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure J DRight (b,c):rest),d,e)
+
+
+
+
+updateTetris _  (a,(Figure L DUp (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure L DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure L DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure L DDown (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure L DDown (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure L DDown (b,c):rest),d,e)
+updateTetris _  (a,(Figure L DLeft (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure L DLeft (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure L DLeft (b,c):rest),d,e)
+updateTetris _  (a,(Figure L DRight (b,c):rest),d,e) | c < screenHeight - 90   =  (a,(Figure L DRight (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure L DRight (b,c):rest),d,e)                                                                                                    
+
+
+
+
+
+
+updateTetris _  (a,(Figure S DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure S DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure S DUp (b,c):rest),d,e)
+updateTetris _  (a,(Figure S DDown (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure S DDown (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure S DDown (b,c):rest),d,e)
+updateTetris _  (a,(Figure S DLeft (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure S DLeft (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure S DLeft (b,c):rest),d,e)
+updateTetris _  (a,(Figure S DRight (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure S DRight (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure S DRight (b,c):rest),d,e)
+
+
+
+
+updateTetris _  (a,(Figure Z DUp (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure Z DUp (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure Z DUp (b,c):rest),d,e) 
+updateTetris _  (a,(Figure Z DDown (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure Z DDown (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure Z DDown (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
+updateTetris _  (a,(Figure Z DLeft (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure Z DLeft (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure Z DLeft (b,c):rest),d,e)                                                                                                                                                                                                                                                                  
+updateTetris _  (a,(Figure Z DRight (b,c):rest),d,e) | c < screenHeight - 60   =  (a,(Figure Z DRight (b ,c +1):rest),d,e)
+                                                  | otherwise = (a,(Figure Z DRight (b,c):rest),d,e)     
+
 
 
 
@@ -627,6 +703,10 @@ handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure T DUp (b,c):rest),d,e) = (a,(Figure T DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 
+handleTetris (EventKey (SpecialKey KeySpace) Down _ _) (a,(Figure T dir (b,c):rest),d,e) =  turn (a,(Figure T dir (b ,c):rest),d,e) 
+handleTetris (EventKey (SpecialKey KeySpace) Up _ _) t = t
+
+
 -- Shape L
 
 handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure L DUp (b,c):rest),d,e) = moveRight (a,(Figure L DUp (b,c):rest),d,e)
@@ -683,12 +763,8 @@ handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
 handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure Z DUp (b,c):rest),d,e) = (a,(Figure Z DUp (b ,c - 60):rest),d,e)
 handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
 
-<<<<<<< HEAD
-
-=======
 -- Turn
->>>>>>> I is perfect
-handleTetris (EventKey (SpecialKey KeySpace) Down _ _) t = t
+--handleTetris (EventKey (SpecialKey KeySpace) Down _ _) t = t
 
 
 handleTetris  _ t = t  
