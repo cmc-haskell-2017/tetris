@@ -466,17 +466,17 @@ updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
 
 handleTetris :: Event -> Gamestate -> Gamestate
 
-handleTetris (EventKey (SpecialKey KeyRight) Down _ _) (a,(Figure sha dir (b,c):rest),d,e) = moveRight (a,(Figure sha dir (b,c):rest),d,e)
-handleTetris (EventKey (SpecialKey KeyRight) Up _ _) t = t
+handleTetris (EventKey (Char 'l') Down _ _) (a,(Figure sha dir (b,c):rest),d,e) = moveRight (a,(Figure sha dir (b,c):rest),d,e)
+handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (SpecialKey KeyLeft) Down _ _)  (a,(Figure sha dir (b,c):rest),d,e)  = moveLeft (a,(Figure sha dir (b,c):rest),d,e)
-handleTetris (EventKey (SpecialKey KeyLeft) Up _ _)  t  = t
+handleTetris (EventKey (Char 'j') Down _ _)  (a,(Figure sha dir (b,c):rest),d,e)  = moveLeft (a,(Figure sha dir (b,c):rest),d,e)
+handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeyDown) Down _ _ ) (a,(Figure sha dir (b,c):rest),d,e)  = dropit (a,(Figure sha dir (b,c):rest),d,e) 
-handleTetris(EventKey (SpecialKey KeyDown) Up _ _ ) t = t
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a,(Figure sha dir (b,c):rest),d,e)  = dropit (a,(Figure sha dir (b,c):rest),d,e) 
+handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (SpecialKey KeyUp) Down _ _ ) (a,(Figure sha dir (b,c):rest),d,e) = turn (a, (Figure sha dir (b ,c):rest),d,e)
-handleTetris (EventKey (SpecialKey KeyUp) Up _ _ ) t = t
+handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c):rest),d,e) = turn (a, (Figure sha dir (b ,c):rest),d,e)
+handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
 handleTetris  _ t = t  
 
