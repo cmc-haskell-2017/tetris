@@ -294,6 +294,13 @@ isGameOver::Gamestate -> Bool
 isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
 
 
+
+
+sortRows :: Board -> Board
+sortRows []     = []
+sortRows ((brda,brdb):brds) = sortRows (filter (\(x,y) -> y > brdb) brds) ++ [(brda,brdb)] ++ sortRows (filter (\(x,y) -> y <= brdb) brds)
+
+
 deleteRows :: Board -> Board
 deleteRows [] = []
 deleteRows ((brda,brdb):brds) | (length (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) == 10)  =  (deleteRows (map (\(x,y) -> (x, y + blockSize)) (filter (\(x,y) -> y < brdb) l)) ++ (filter (\(x,y) -> y > brdb) l))
@@ -422,7 +429,7 @@ updateSpeed _ _ = 0
 
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | gameover = (genEmptyBoard,rest,d,e)
-                                                    | collide =  (deleteRows (updateBoard (Figure sha dir (b ,c)) a), rest, d, e)
+                                                    | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c)) a)), rest, d, e)
                                                     | otherwise = (a,(Figure sha dir (b,c + blockSize):rest),d,e)
                                                        where
                                                        collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize)))   a
