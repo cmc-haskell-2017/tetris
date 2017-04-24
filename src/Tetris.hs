@@ -55,17 +55,18 @@ type Coord = (Int, Int)
 --время
 type Time = Float
 
+
 --Состояние игры в текущий момент(разделили доску и фигуру,
 --чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
 --оптимизировано)
 --[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  [Figure], Speed, Time)
+type Gamestate = (Board,  [Figure], Speed, Score)
 --data Gamestate = Gamestate
 --    { board   :: Board  
 --    , figure  :: Figure
 --     , speed   :: Speed
---     , time    :: Time    
+--     , score    :: Score
 --     }
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -166,19 +167,19 @@ turn::Gamestate -> Gamestate
 turn (a,(Figure t DUp c):rest,d,e) | collide1 = (a,(Figure t DUp c):rest,d,e)
                                    | otherwise = (a,(Figure t DRight c):rest,d,e)
                             where 
-                                collide1 = collidesFigure (figureToDraw (Figure t DRight c))
+                                collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
 turn (a,(Figure t DRight c):rest,d,e) | collide2 = (a,(Figure t DRight c):rest,d,e)
                                       | otherwise = (a,(Figure t DDown c):rest,d,e)
                             where 
-                                collide2 = collidesFigure (figureToDraw (Figure t DDown c))
+                                collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
 turn (a,(Figure t DDown c):rest,d,e) | collide3 = (a,(Figure t DDown c):rest,d,e)
                                      | otherwise = (a,(Figure t DLeft c):rest,d,e)
                             where 
-                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c))
+                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
 turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e)
                                      | otherwise = (a,(Figure t DUp c):rest,d,e)
                             where 
-                                collide4 = collidesFigure (figureToDraw (Figure t DUp c))
+                                collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
 
 figureToDraw::Figure->BlockedFigure
 figureToDraw (Figure O d c) = figureToDrawO (Figure O d c)
@@ -275,10 +276,8 @@ collidesBlockUp (a,b) ((brda,brdb):brds)  | b < 0 && (b==brdb)  = True
 --collidesBlockDown (a,b) ((brda,brdb):brds) = True
 
 
-collidesFigure::BlockedFigure -> Bool
-collidesFigure (a,b,c,d ) | (collidesBlock a) || (collidesBlock b) || (collidesBlock c) || (collidesBlock d) = True
-        |otherwise = False
-
+collidesFigure::BlockedFigure -> Board -> Bool
+collidesFigure (a,b,c,d) board = (collidesFigureSides (a,b,c,d) board) || (collidesFigureDown (a,b,c,d) board)
 
 collidesFigureSides::BlockedFigure -> Board -> Bool
 collidesFigureSides (a,b,c,d) board | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
@@ -390,8 +389,20 @@ drawBlockedFigure ((a, b, c, d)) = pictures (map drawBlock [a,b,c,d])
 drawTetris ::Gamestate-> Picture
 drawTetris (b,fs,s,t) = pictures
   [ drawFigure (b,fs,s,t),
-    drawBoard b
+    drawBoard b,
+    drawScore t
   ] 
+
+
+drawScore :: Score -> Picture
+drawScore score = translate (-w) h (scale 30 30 (pictures
+  [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
+  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
+  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
+  ]))
+  where
+    w = fromIntegral screenWidth  / 2
+    h = fromIntegral screenHeight / 2
 
 -- =========================================
 -- Updating
@@ -428,8 +439,8 @@ updateSpeed _ _ = 0
 
 
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | gameover = (genEmptyBoard,rest,d,e)
-                                                    | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c)) a)), rest, d, e)
+updateTetris _  (a,(Figure sha dir (b,c):rest),d,e) | gameover = (genEmptyBoard,rest,d,0)
+                                                    | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c)) a)), rest, d, e + 1)
                                                     | otherwise = (a,(Figure sha dir (b,c + blockSize):rest),d,e)
                                                        where
                                                        collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize)))   a
