@@ -6,19 +6,17 @@ import Graphics.Gloss.Geometry.Line
 import Graphics.Gloss.Interface.Pure.Game
 import GHC.Float
 
+glob_fps = 60
+
 run :: IO ()
 
---run = putStrLn "This project is not yet implemented"
 run = do
  g <- newStdGen
-
-   --putStrLn "This project is not yet implemented"
- 
  play display bgColor fps (genUniverse g ) drawTetris handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 5    -- кол-во кадров в секунду
+    fps     = glob_fps   -- кол-во кадров в секунду
 
 
 
@@ -31,7 +29,8 @@ run = do
 blockSize :: Int
 blockSize = 30
 
-
+init_tact::Time
+init_tact = 0.7
 
                                --data Shape = J | L | I | S | Z | O | T
                                --         deriving (Eq, Show, Enum)
@@ -61,13 +60,8 @@ type Time = Float
 --оптимизировано)
 --[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  [Figure], Speed, Score)
---data Gamestate = Gamestate
---    { board   :: Board  
---    , figure  :: Figure
---     , speed   :: Speed
---     , score    :: Score
---     }
+type Gamestate = (Board,  [Figure], (Speed, Time), Score)
+
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --Скорость
@@ -140,7 +134,7 @@ genRow w = (genRow (w-1)) ++ [Free]
 
 
 genUniverse::StdGen -> Gamestate
-genUniverse g = (genEmptyBoard,initFigures g,0,0)
+genUniverse g = (genEmptyBoard,initFigures g,(init_tact, 0),0)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -273,7 +267,6 @@ collidesBlockUp (a,b,z) []  =  b < 0
 collidesBlockUp (a,b,z) ((brda,brdb,z1):[])  =   (b < 0 && (b==brdb))
 collidesBlockUp (a,b,z) ((brda,brdb,z1):brds)  | b < 0 && (b==brdb)  = True
                                           |  otherwise = collidesBlockUp (a,b,z) brds
---collidesBlockDown (a,b) ((brda,brdb):brds) = True
 
 
 collidesFigure::BlockedFigure -> Board -> Bool
@@ -316,52 +309,6 @@ dropit (a,((Figure sha dir (b,c,z)):rest),d,e) pts  | collide = (a,((Figure sha 
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
 
 
-
-
-
------------------------------------------------------------------------------------------------------------------
---Смотрит, нет ли строк, которые можно удалить
---checkRowsToDelete::Board -> [Bool]
---checkRowsToDelete (r:[]) =  (checkRow r):[]
---checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
-
---Смотрит, можно ли удаоить строку
---checkRow::Row -> Bool
---checkRow (Free:[]) = False
---checkRow (Full:[]) = True
---checkRow (c:cs)  | c == Free = False
-       --          | otherwise =  checkRow cs
---Удаляет строку
---deleteRow::[Bool] -> Board -> Board
---deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
-  --  | otherwise = (deleteRow bs rs)                                  
-
---------------------------------------------------------------------------------------------------------------
---gameover :: Gamestate -> Bool
---gameover _ =  False
-
-
-
--- =========================================
--- Drawing
--- =========================================
-
-
-
-
-
---Рисуем доску
---заглушка
---drawBoard::Board  -> Picture
---drawBoard _ =  translate (-w) h (scale 30 30 (pictures
---  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
---  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
---  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
---  ]))
---  where
---    w = fromIntegral screenWidth  / 2
---    h = fromIntegral screenHeight / 2
-
 drawBoard::Board  -> Picture
 drawBoard s = pictures (map drawBlock s)
 
@@ -375,13 +322,6 @@ drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
 
    ]))
-
-
-
-   
-
-
-   
     ]
   where
   w = fromIntegral screenWidth  / 2
@@ -450,15 +390,6 @@ drawBlockedFigure ((a, b, c, d)) =         pictures  [drawBlock   a ,
                                                      drawBlock     c ,
                                                      drawBlock     d ]
 
-
-
-
-
-
-
-
-
-
 --Рисуем тетрис
 --Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
@@ -514,27 +445,33 @@ updateSpeed _ _ = 0
 
 
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,(Figure sha dir (b,c,z):rest),d,e) | gameover = (genEmptyBoard,rest,d,0)
-                                                    | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,z)) a)), rest, d, e + 1)
-                                                    | otherwise = (a,(Figure sha dir (b,c + blockSize,z):rest),d,e)
-                                                       where
-                                                       collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,z)))   a
-                                                       gameover = isGameOver (a,(Figure sha dir (b,c,z):rest),d,e)
---Обновить весь тетрис
-updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
-updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
+updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genEmptyBoard,rest,(init_tact, 0),0)
+                                                              | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
+                                                              | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) dt sp)
+                                                                 where
+                                                                   collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
+                                                                   gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
 -- ===========================================
 -- timing
 -- =======================================
 
+newTact::Gamestate -> Float -> Float -> Gamestate
+newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
+  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s) (dt + ti - tact) tact
+  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s)
+                                        where
+                                          new = ti + dt >= tact
 
---Обновляет общее состояние тетриса
---newTact::Figure -> Board -> Speed -> Gamestate
---newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
---Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
---newMove::Board -> Gamestate
---newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
-
+newLevel::Gamestate -> Gamestate
+newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
+  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.1, ti), s)
+  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.2, ti), s)
+  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.4, ti), s)
+  | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
+        where 
+          l3 = s >= 5000
+          l2 = s >= 3000 && s <= 5000
+          l1 = s >= 1000 && s <= 3000
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 
