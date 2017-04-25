@@ -247,11 +247,12 @@ moveRight (a,(Figure s t (b,c)):rest,d,e) | collide = (a, ((Figure s t (b,c)):re
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c))) a
 
+--Проверяет, не выходит ли правая или левая часть фигуры за правую или
+-- левую часть доски соответственно
 
 collidesBlock::Coord -> Bool
 collidesBlock (a,b) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
-
 
 collidesBlockSides::Coord -> Board -> Bool
 collidesBlockSides (a,b) [] = (a < 0) || (a  + blockSize > screenWidth)
@@ -260,13 +261,18 @@ collidesBlockSides (a,b) ((brda, brdb):brds) | (a < 0) || (a  + blockSize > scre
                                              | otherwise = collidesBlockSides (a,b) brds
 
 
+--Проверяет, достигла ли нижняя часть фигуры нижней 
+--границы доски или другой фигуры: делаем xor доски и фигуры,
+--если количество свободных блоков одно и то же, то не достигла, иначе
+--достигла 
+
 collidesBlockDown::Coord -> Board-> Bool
 collidesBlockDown (a,b) []  =   (b + blockSize > screenHeight)
 collidesBlockDown (a,b) ((brda,brdb):[])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
 collidesBlockDown (a,b) ((brda,brdb):brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
                                             |  otherwise = collidesBlockDown (a,b) brds
-
-
+                                            
+--Проверяет, не выходит ли фигура за границы сферху
 
 collidesBlockUp::Coord -> Board-> Bool
 collidesBlockUp (a,b) []  =  b < 0
@@ -321,49 +327,9 @@ dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,
 --                                           where
 --                                             collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + 2*blockSize)))
 
-
------------------------------------------------------------------------------------------------------------------
---Смотрит, нет ли строк, которые можно удалить
---checkRowsToDelete::Board -> [Bool]
---checkRowsToDelete (r:[]) =  (checkRow r):[]
---checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
-
---Смотрит, можно ли удаоить строку
---checkRow::Row -> Bool
---checkRow (Free:[]) = False
---checkRow (Full:[]) = True
---checkRow (c:cs)  | c == Free = False
-       --          | otherwise =  checkRow cs
---Удаляет строку
---deleteRow::[Bool] -> Board -> Board
---deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
-  --  | otherwise = (deleteRow bs rs)                                  
-
---------------------------------------------------------------------------------------------------------------
---gameover :: Gamestate -> Bool
---gameover _ =  False
-
-
-
 -- =========================================
 -- Drawing
 -- =========================================
-
-
-
-
-
---Рисуем доску
---заглушка
---drawBoard::Board  -> Picture
---drawBoard _ =  translate (-w) h (scale 30 30 (pictures
---  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
---  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
---  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
---  ]))
---  where
---    w = fromIntegral screenWidth  / 2
---    h = fromIntegral screenHeight / 2
 
 drawBoard::Board  -> Picture
 drawBoard s = pictures (map drawBlock s)
@@ -408,21 +374,6 @@ drawScore score = translate (-w) h (scale 30 30 (pictures
 -- Updating
 -- =========================================
 
-
---Проверяет, достигла ли нижняя часть фигуры нижней 
---границы доски или другой фигуры: делаем xor доски и фигуры,
---если количество свободных блоков одно и то же, то не достигла, иначе
---достигла Пока она реализована в updateTetris
-collidesFloor::Gamestate -> Bool
-collidesFloor _ =  False
---Проверяет, не выходит ли правая или левая часть фигуры за правую или
--- левую часть доски соответственно
---пока реализована в обраюотчиках клавиш
-collidesSide::Gamestate -> Bool
-collidesSide _ =  False
---Делает пустые блоки доски, на в которых находится фигура заполненными,
---вызываем ее после падения фигуры
-
 vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
 vectolist (a,b,c,d) = [a,b,c,d]
 
@@ -451,14 +402,6 @@ updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
 -- ===========================================
 -- timing
 -- =======================================
-
-
---Обновляет общее состояние тетриса
---newTact::Figure -> Board -> Speed -> Gamestate
---newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
---Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
---newMove::Board -> Gamestate
---newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
 
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
