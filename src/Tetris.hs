@@ -181,6 +181,9 @@ turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e
                             where 
                                 collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
 
+--возвращает список блоков входящих в фигуру для последующей
+--обработки при движении вправо или влево/повороте/падении вниз
+
 figureToDraw::Figure->BlockedFigure
 figureToDraw (Figure O d c) = figureToDrawO (Figure O d c)
 figureToDraw (Figure I d c) = figureToDrawI (Figure I d c)
@@ -234,6 +237,7 @@ startGame  _ =  0
 --Переещает фигуру влево  
 
 
+--движение фигуры вправо/влево
 
 moveLeft::Gamestate -> Gamestate
 moveLeft (a,((Figure s t (b,c)):rest),d,e) | collide = (a, ((Figure s t (b,c)):rest),d,e)
@@ -289,6 +293,7 @@ collidesFigureSides::BlockedFigure -> Board -> Bool
 collidesFigureSides (a,b,c,d) board | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
         |otherwise = False
 
+--Проверяет, не достигла ли фигура нижней границы
 
 collidesFigureDown::BlockedFigure -> Board -> Bool
 collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) || (collidesBlockDown d board) = True
@@ -299,13 +304,12 @@ isGameOver::Gamestate -> Bool
 isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
 
 
-
-
+--нужна для корректной работы удаления строк
 sortRows :: Board -> Board
 sortRows []     = []
 sortRows ((brda,brdb):brds) = sortRows (filter (\(x,y) -> y > brdb) brds) ++ [(brda,brdb)] ++ sortRows (filter (\(x,y) -> y <= brdb) brds)
 
-
+--Удаляет "полные" строки
 deleteRows :: Board -> Board
 deleteRows [] = []
 deleteRows ((brda,brdb):brds) | (length (filter (\(x,y) -> brdb == y) ((brda,brdb):brds)) == 10)  =  (deleteRows (map (\(x,y) -> (x, y + blockSize)) (filter (\(x,y) -> y < brdb) l)) ++ (filter (\(x,y) -> y > brdb) l))
@@ -320,12 +324,6 @@ dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,
                                              | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)                                         
                                           where                                           
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize))) a
-
--- dropit::Gamestate -> Gamestate
--- dropit (a,((Figure sha dir (b,c)):rest),d,e) | collide = (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
---                                              | otherwise = dropit (a,((Figure sha dir (b,c + blockSize)):rest),d,e)
---                                           where
---                                             collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + 2*blockSize)))
 
 -- =========================================
 -- Drawing
@@ -342,7 +340,7 @@ drawBlock (b,c) =  pictures [ translate (-w) h (scale  1 1 (pictures
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 
-
+--рисует фигуру
 drawFigure::Gamestate  ->  Picture
 drawFigure (b,(f:fs),s,t) = drawBlockedFigure (figureToDraw f)
 
