@@ -446,10 +446,10 @@ updateSpeed _ _ = 0
 
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genEmptyBoard,rest,(init_tact, 0),0)
-                                                              | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
+                                                              -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
                                                               | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) dt sp)
                                                                  where
-                                                                   collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
+                                                                   -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
                                                                    gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
 -- ===========================================
 -- timing
@@ -457,10 +457,13 @@ updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genE
 
 newTact::Gamestate -> Float -> Float -> Gamestate
 newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
+  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1)
   | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s) (dt + ti - tact) tact
+  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s)
   | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s)
                                         where
                                           new = ti + dt >= tact
+                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
 
 newLevel::Gamestate -> Gamestate
 newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
