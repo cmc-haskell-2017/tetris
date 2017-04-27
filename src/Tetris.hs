@@ -457,6 +457,7 @@ updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genE
 
 newTact::Gamestate -> Float -> Float -> Gamestate
 newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
+  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
   | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1)
   | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s) (dt + ti - tact) tact
   | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s)
@@ -464,6 +465,7 @@ newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
                                         where
                                           new = ti + dt >= tact
                                           collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
+                                          paused = sp < 0
 
 newLevel::Gamestate -> Gamestate
 newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
@@ -492,6 +494,9 @@ handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
 handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e) = turn (a, (Figure sha dir (b ,c,z):rest),d,e)
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
+
+handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e)
+handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
 handleTetris  _ t = t  
 
