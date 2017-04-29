@@ -469,14 +469,19 @@ newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
 
 newLevel::Gamestate -> Gamestate
 newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
-  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.1, ti), s)
-  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.2, ti), s)
-  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (0.4, ti), s)
+  | l5 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.1, ti), s)
+  | l4 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.15, ti), s)
+  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.2, ti), s)
+  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.25, ti), s)
+  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.3, ti), s)
+  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.4, ti), s)
   | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
         where 
-          l3 = s >= 5000
-          l2 = s >= 3000 && s <= 5000
-          l1 = s >= 1000 && s <= 3000
+          l5 = s >= 5000
+          l4 = s >= 3000 && s <= 5000
+          l3 = s >= 2000 && s <= 3000
+          l2 = s >= 1500 && s <= 2000
+          l1 = s >= 1000 && s <= 1500
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 
