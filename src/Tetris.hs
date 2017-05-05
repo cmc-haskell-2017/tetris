@@ -6,19 +6,17 @@ import Graphics.Gloss.Geometry.Line
 import Graphics.Gloss.Interface.Pure.Game
 import GHC.Float
 
+glob_fps = 60
+
 run :: IO ()
 
---run = putStrLn "This project is not yet implemented"
 run = do
  g <- newStdGen
-
-   --putStrLn "This project is not yet implemented"
- 
  play display bgColor fps (genUniverse g ) drawTetris handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона
-    fps     = 5    -- кол-во кадров в секунду
+    fps     = glob_fps   -- кол-во кадров в секунду
 
 
 
@@ -31,18 +29,19 @@ run = do
 blockSize :: Int
 blockSize = 30
 
-
+init_tact::Time
+init_tact = 0.7
 
                                --data Shape = J | L | I | S | Z | O | T
                                --         deriving (Eq, Show, Enum)
 --Клетка заполнена?
-data Block = Free | Full
-         deriving(Eq, Show)
+--data Block = Free | Full
+  --       deriving(Eq, Show)
 
 --Строки нашей доски
-type Row = [Block]
+--type Row = [Block]
 
---Все поле
+--Доска - упавшие блоки
 type Board = [Coord]
 
 --Счет
@@ -50,7 +49,7 @@ type Score = Int
 
 --Координаты фигуры, поворот однозначно определяется 
 --их последовательностью
-type Coord = (Int, Int,Int)
+type Coord = (Int, Int, Int)
 
 --время
 type Time = Float
@@ -61,13 +60,8 @@ type Time = Float
 --оптимизировано)
 --[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  [Figure], Speed, Score)
---data Gamestate = Gamestate
---    { board   :: Board  
---    , figure  :: Figure
---     , speed   :: Speed
---     , score    :: Score
---     }
+type Gamestate = (Board,  [Figure], (Speed, Time), Score)
+
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --Скорость
@@ -126,28 +120,41 @@ getrange = (0, 6)
 
 --Заполняем доску пустыми значениями и генерируем бесконечное количество фигур
 
+
+fff :: Int -> [Coord]
+fff 0 = []
+fff hei = [(bs*10,bs*hei,0),(bs*11,bs*hei,0),(bs*12,bs*hei,0),(bs*13,bs*hei,0),(bs*14,bs*hei,0),(bs*15,bs*hei,0),
+  (-1*bs,bs*hei,0),(-2*bs,bs*hei,0),(-3*bs,bs*hei,0),(-4*bs,bs*hei,0),(-5*bs,bs*hei,0),(-6*bs,bs*hei,0)] ++ (fff (hei-1))
+    where bs = blockSize
+
+
 genEmptyBoard::Board
-genEmptyBoard = []
+--genEmptyBoard = []
+genEmptyBoard = [(bs*9,bs*20,0),(bs*8,bs*20,0),(bs*7,bs*20,0),(bs*6,bs*20,0),(bs*5,bs*20,0),(bs*4,bs*20,0),
+  (3*bs,bs*20,0),(2*bs,bs*20,0),(1*bs,bs*20,0)]
+   where bs = blockSize
+--genEmptyBoard = [(bs*9,bs*20,0),(bs*8,bs*20,0),(bs*7,bs*20,0),(bs*6,bs*20,0),(bs*5,bs*20,0),(bs*4,bs*20,0),
+  --(3*bs,bs*20,0),(2*bs,bs*20,0),(1*bs,bs*20,0)]  ++ (fff 20)
+   
+--genRows::Int->Int->[Row]
+--genRows _ 0 = []
+--genRows w h = (genRows w (h-1)) ++ [genRow w]
 
-genRows::Int->Int->[Row]
-genRows _ 0 = []
-genRows w h = (genRows w (h-1)) ++ [genRow w]
 
-
-genRow::Int->Row
-genRow 0 = []
-genRow w = (genRow (w-1)) ++ [Free]
+--genRow::Int->Row
+--genRow 0 = []
+--genRow w = (genRow (w-1)) ++ [Free]
 
 
 genUniverse::StdGen -> Gamestate
-genUniverse g = (genEmptyBoard,initFigures g,0,0)
+genUniverse g = (genEmptyBoard,initFigures g,(init_tact, 0),0)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
 --Генерируем бесконечный список из случайных фигур
 -- == initFigures
-generateRandomFigureList:: StdGen -> [Figure]
-generateRandomFigureList _ =  [Figure O DUp (0,0,0)]
+--generateRandomFigureList:: StdGen -> [Figure]
+--generateRandomFigureList _ =  [Figure O DUp (0,0,0)]
 
 
 
@@ -273,7 +280,6 @@ collidesBlockUp (a,b,z) []  =  b < 0
 collidesBlockUp (a,b,z) ((brda,brdb,z1):[])  =   (b < 0 && (b==brdb))
 collidesBlockUp (a,b,z) ((brda,brdb,z1):brds)  | b < 0 && (b==brdb)  = True
                                           |  otherwise = collidesBlockUp (a,b,z) brds
---collidesBlockDown (a,b) ((brda,brdb):brds) = True
 
 
 collidesFigure::BlockedFigure -> Board -> Bool
@@ -316,52 +322,6 @@ dropit (a,((Figure sha dir (b,c,z)):rest),d,e) pts  | collide = (a,((Figure sha 
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
 
 
-
-
-
------------------------------------------------------------------------------------------------------------------
---Смотрит, нет ли строк, которые можно удалить
---checkRowsToDelete::Board -> [Bool]
---checkRowsToDelete (r:[]) =  (checkRow r):[]
---checkRowsToDelete (r:rs) = (checkRow r) : (checkRowsToDelete rs)
-
---Смотрит, можно ли удаоить строку
---checkRow::Row -> Bool
---checkRow (Free:[]) = False
---checkRow (Full:[]) = True
---checkRow (c:cs)  | c == Free = False
-       --          | otherwise =  checkRow cs
---Удаляет строку
---deleteRow::[Bool] -> Board -> Board
---deleteRow (b:bs) (r:rs)  | b == False = r:(deleteRow bs rs)
-  --  | otherwise = (deleteRow bs rs)                                  
-
---------------------------------------------------------------------------------------------------------------
---gameover :: Gamestate -> Bool
---gameover _ =  False
-
-
-
--- =========================================
--- Drawing
--- =========================================
-
-
-
-
-
---Рисуем доску
---заглушка
---drawBoard::Board  -> Picture
---drawBoard _ =  translate (-w) h (scale 30 30 (pictures
---  [ color white (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
---  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
---  , translate 2 (-1.5) (scale 0.01 0.01 (color red (text (show 0))))  -- красный счёт
---  ]))
---  where
---    w = fromIntegral screenWidth  / 2
---    h = fromIntegral screenHeight / 2
-
 drawBoard::Board  -> Picture
 drawBoard s = pictures (map drawBlock s)
 
@@ -375,13 +335,6 @@ drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
 
    ]))
-
-
-
-   
-
-
-   
     ]
   where
   w = fromIntegral screenWidth  / 2
@@ -450,15 +403,6 @@ drawBlockedFigure ((a, b, c, d)) =         pictures  [drawBlock   a ,
                                                      drawBlock     c ,
                                                      drawBlock     d ]
 
-
-
-
-
-
-
-
-
-
 --Рисуем тетрис
 --Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
@@ -497,12 +441,15 @@ collidesSide::Gamestate -> Bool
 collidesSide _ =  False
 --Делает пустые блоки доски, на в которых находится фигура заполненными,
 --вызываем ее после падения фигуры
-
 vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
 vectolist (a,b,c,d) = [a,b,c,d]
 
-updateBoard::Figure -> Board ->Board
-updateBoard (Figure sha dir (b ,c,z)) a = a ++ vectolist (figureToDraw (Figure sha dir (b ,c,z)))
+updateBoard::Gamestate ->Board
+updateBoard (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) = a ++ vectolist (figureToDraw (Figure sha dir (b ,c,cl)))
+
+--updateBoard::Figure -> Board ->Board
+--updateBoard (Figure sha dir (b ,c,z)) a = a ++ vectolist (figureToDraw (Figure sha dir (b ,c,z)))
+
 
 --На основании прошедшего времени меняет скорость полета фигур
 updateSpeed::Time -> Speed -> Speed
@@ -514,30 +461,184 @@ updateSpeed _ _ = 0
 
 
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris _  (a,(Figure sha dir (b,c,z):rest),d,e) | gameover = (genEmptyBoard,rest,d,0)
-                                                    | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,z)) a)), rest, d, e + 1)
-                                                    | otherwise = (a,(Figure sha dir (b,c + blockSize,z):rest),d,e)
-                                                       where
-                                                       collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,z)))   a
-                                                       gameover = isGameOver (a,(Figure sha dir (b,c,z):rest),d,e)
---Обновить весь тетрис
-updateTheWholeTetris:: Time -> Speed -> Gamestate -> Gamestate
-updateTheWholeTetris _ _ (a,(b:rest),c,d) = (a,(b:rest),c,d)
+updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genEmptyBoard,rest,(init_tact, 0),0)
+                                                              -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
+                                                              | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) dt sp)
+                                                                 where
+                                                                   -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
+                                                                   gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
+-- ===========================================
+-- AI
+-- =======================================
+sortBoard :: Board -> Board
+sortBoard []     = []
+--sortBoard ((brda,brdb,z):brds) = sortRows (filter (\(x,y,z) -> y > brdb) brds) ++ [(brda,brdb,z)] ++ sortRows (filter (\(x,y,z) -> y <= brdb) brds)
+sortBoard (brd:brds) = sortBoard (filter (\x -> greater x brd ) brds) ++ [brd] ++ sortBoard (filter (\x -> not (greater x brd)) brds)
+
+greater:: Coord -> Coord -> Bool
+greater (x1,y1,z1) (x2,y2,z2) | x1 > x2 = True
+                              | (x1 == x2) && (y1 < y2) = True
+                              | otherwise = False
+
+topcells :: Board -> [Coord]
+topcells [] = []
+topcells ((x1,y1,z1):bs) =  (x1,y1,z1) : topcells (filter  (\(x,y,z) -> not (x == x1)) bs)
+
+--Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса
+--numberholes :: Board -> Int
+--numberholes crds = sortBoard(crds) 
+
+heightofboard :: Board -> Int
+heightofboard brds  = minimum (map (\(x,y,z) -> y) brds)
+   --                       --| (null brds) = 10
+     --                     --|otherwise =  minimum (map (\(x,y,z) -> y) brds)
+
+mymax :: (Int, Int, Int) -> (Int, Int, Int) -> (Int, Int, Int)
+mymax (x1,y1,t1) (x2,y2,t2) | x1 >= x2 = (x1, y1, t1)
+                      | otherwise = (x2, y2, t2)
+
+--bestheight :: [(Int, Int, Int)] -> (Int,Int,Int)
+--bestheight [] = (0, -1, 0)
+--bestheight ((y,x,t):hs) = mymax  (bestheight hs) (y,x,t)
+
+bestchoice :: [(Int, Int, Int)] -> (Int,Int,Int)
+bestchoice [] = (0, -1, 0)
+bestchoice ((y,x,t):hs) = mymax (y,x,t) (bestchoice hs) 
+
+-- topcells (sortBoard)
+-- (сколько поворотов, относительное смещение)
+profitofboard :: Board -> Int
+profitofboard b = 2000 + 10000 * (numberdeletes b) - 100 * (numberholes b) - ((avgheightofboard b) - (heightofboard b))
+
+--figurefromgs brdfromgs
+numberdeletes :: Board -> Int
+numberdeletes b = (heightofboard (deleteRows (sortRows b))) - (heightofboard b)
+
+avgheightofboard :: Board -> Int
+avgheightofboard b = div (sumheightofboard b) 10
+
+numcols :: Board ->  Int
+numcols [] = 0
+numcols ((x1,y1,z1):hs) = 1 +  sumhofb (filter (\(x,y,z) -> not (x == x1)) ((x1,y1,z1):hs))
+
+sumheightofboard :: Board -> Int
+sumheightofboard b = sumhofb (sortBoard b)
+
+sumhofb :: Board -> Int
+sumhofb [] = 0
+sumhofb ((x1,y1,z1):hs) = y1  +  sumhofb (filter (\(x,y,z) -> not (x == x1)) ((x1,y1,z1):hs))
+
+numberholes :: Board -> Int
+numberholes b = nh (sortBoard b)
+
+nh :: Board -> Int
+nh [] = 0
+nh ((x1,y1,z1):hs) = nhcolumn (filter (\(x,y,z) -> x == x1) ((x1,y1,z1):hs))  + nh (filter (\(x,y,z) -> not (x == x1)) ((x1,y1,z1):hs))
+
+nhcolumn :: [Coord] -> Int
+nhcolumn [] = 0
+nhcolumn ((x1,y1,z1):hs) = (div (screenHeight - y1) blockSize) - length ((x1,y1,z1):hs)
+
+--nhcolumn 
+
+
+
+beststep :: Gamestate -> (Int, Int, Int)
+beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) =
+   bestchoice ((profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 0) :
+    (profitofboard (updateBoard (dropit (moveLeft gs) (screenHeight-f2))) , -1, 0) :
+    (profitofboard (updateBoard (dropit (moveRight gs) (screenHeight-f2))), 1, 0) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft gs)) (screenHeight-f2))), -2, 0) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight gs)) (screenHeight-f2))), 2, 0) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft gs))) (screenHeight-f2))), -3, 0) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight gs))) (screenHeight-f2))), 3, 0) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft gs)))) (screenHeight-f2))), -4, 0) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight gs)))) (screenHeight-f2))), 4, 0) : 
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft gs))))) (screenHeight-f2))), -5, 0) :
+
+    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 1) :
+    (profitofboard (updateBoard (dropit (moveLeft (turn gs)) (screenHeight-f2))) , -1, 1) :
+    (profitofboard (updateBoard (dropit (moveRight (turn gs)) (screenHeight-f2))), 1, 1) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn gs))) (screenHeight-f2))), -2, 1) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn gs))) (screenHeight-f2))), 2, 1) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn gs)))) (screenHeight-f2))), -3, 1) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn gs)))) (screenHeight-f2))), 3, 1) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn gs))))) (screenHeight-f2))), -4, 1) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn gs))))) (screenHeight-f2))), 4, 1) : 
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn gs)))))) (screenHeight-f2))), -5, 1) :
+
+    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 2) :
+    (profitofboard (updateBoard (dropit (moveLeft (turn (turn gs))) (screenHeight-f2))) , -1, 2) :
+    (profitofboard (updateBoard (dropit (moveRight (turn (turn gs))) (screenHeight-f2))), 1, 2) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn (turn gs)))) (screenHeight-f2))), -2, 2) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn (turn gs)))) (screenHeight-f2))), 2, 2) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn gs))))) (screenHeight-f2))), -3, 2) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn gs))))) (screenHeight-f2))), 3, 2) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs)))))) (screenHeight-f2))), -4, 2) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn gs)))))) (screenHeight-f2))), 4, 2) : 
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs))))))) (screenHeight-f2))), -5, 2) :
+
+    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 3) :
+    (profitofboard (updateBoard (dropit (moveLeft (turn (turn (turn gs)))) (screenHeight-f2))) , -1, 3) :
+    (profitofboard (updateBoard (dropit (moveRight (turn (turn (turn gs)))) (screenHeight-f2))), 1, 3) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn (turn (turn gs))))) (screenHeight-f2))), -2, 3) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn (turn (turn gs))))) (screenHeight-f2))), 2, 3) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))) (screenHeight-f2))), -3, 3) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn (turn gs)))))) (screenHeight-f2))), 3, 3) :
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs))))))) (screenHeight-f2))), -4, 3) :
+    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn (turn gs))))))) (screenHeight-f2))), 4, 3) : 
+    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))))) (screenHeight-f2))), -5, 3) :
+
+    [])
+      where
+        gs = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) 
+
+makestep:: Gamestate -> Gamestate 
+makestep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
+  | needturn = turn (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
+  | needleft = moveLeft (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
+  | needright = moveRight (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
+  | otherwise   = dropit (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) (screenHeight-f2)
+    where
+      needturn = (\(x,y,t) -> t) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
+      needleft = (\(x,y,t) -> y) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) < 0
+      needright = (\(x,y,t) -> y) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
+
+
 -- ===========================================
 -- timing
 -- =======================================
 
 
---Обновляет общее состояние тетриса
---newTact::Figure -> Board -> Speed -> Gamestate
---newTact _ _ _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
---Застявляет фигуру постоянно падать, вызываем эту фунцию на каждом такте
---newMove::Board -> Gamestate
---newMove _ =  ([[Free]],[Figure O DUp (0,0)],0,0)
+newTact::Gamestate -> Float -> Float -> Gamestate
+newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
+  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
+  | new && collides = (deleteRows (sortRows (updateBoard (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s))), rest, (sp, ti), s + 1)
+  | new = newTact (makestep(makestep(makestep(makestep (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s))))) (dt + ti - tact) tact
+  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s)
+  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s)
+                                        where
+                                          new = ti + dt >= tact
+                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
+                                          paused = sp < 0
 
+newLevel::Gamestate -> Gamestate
+newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
+  | l5 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.1, ti), s)
+  | l4 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.15, ti), s)
+  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.2, ti), s)
+  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.25, ti), s)
+  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.3, ti), s)
+  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.4, ti), s)
+  | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
+        where 
+          l5 = s >= 5000
+          l4 = s >= 3000 && s <= 5000
+          l3 = s >= 2000 && s <= 3000
+          l2 = s >= 1500 && s <= 2000
+          l1 = s >= 1000 && s <= 1500
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
-
 
 handleTetris :: Event -> Gamestate -> Gamestate
 
@@ -553,11 +654,8 @@ handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e) = turn (a, (Figure sha dir (b ,c,z):rest),d,e)
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
+handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e)
+handleTetris (EventKey (Char 'p') Up _ _ ) t = t
+
 handleTetris  _ t = t  
-
-
-
-
-
-
 --------------
