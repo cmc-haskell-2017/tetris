@@ -15,18 +15,27 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   ghc-options:         -Wall -fno-warn-type-defaults
-  exposed-modules:     Tetris
+  exposed-modules:     
+    Tetris
+    Tetris.Types
+    Tetris.Drawing
+    Tetris.Generating
+    Tetris.Handling
+    Tetris.Updating
+    Tetris.Colliding
   build-depends:       base >= 4.7 && < 5
-          , gloss
-                     , random  
+                     , gloss
+                     , random
   default-language:    Haskell2010
 
-executable my-project
+executable tetris
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , my-project
+                     , gloss
+                     , random
   default-language:    Haskell2010
 
 test-suite my-project-test
