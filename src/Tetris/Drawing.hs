@@ -149,7 +149,6 @@ drawBlockedFigure ((a, b, c, d)) =         pictures  [drawBlock   a ,
                                                      drawBlock     d ]
 
 --Рисуем тетрис
---Пока только рисует квадрат
 drawTetris ::Gamestate-> Picture
 drawTetris (b,fs,s,t) = pictures
   [ drawFigure (b,fs,s,t),

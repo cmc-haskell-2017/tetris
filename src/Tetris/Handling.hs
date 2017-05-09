@@ -24,11 +24,14 @@ handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e) = turn (a, (Figure sha dir (b ,c,z):rest),d,e)
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e)
+handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = pause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e)
 handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
 handleTetris  _ t = t  
 
+
+pause::Gamestate -> Gamestate
+pause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e)
 
 
 turn::Gamestate -> Gamestate

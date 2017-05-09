@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
+
 module Tetris.Types where
 
 import System.Random
@@ -5,6 +8,10 @@ import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Geometry.Line
 import Graphics.Gloss.Interface.Pure.Game
 import GHC.Float
+
+import Data.Binary
+import Network.WebSockets
+import GHC.Generics
 
 glob_fps = 60::Int
 
@@ -20,6 +27,8 @@ init_tact = 0.7
 
                                --data Shape = J | L | I | S | Z | O | T
                                --         deriving (Eq, Show, Enum)
+
+type PlayerName = String
 
 -- Представление фигуры, как списка блоков
 type BlockedFigure = (Coord, Coord, Coord, Coord)
@@ -63,13 +72,17 @@ type Speed = Float
 --а фигуру O на расстоянии больше 2 клеток от края
 
 data FigureType = O | I | T | J | L | S | Z
-                      deriving(Eq, Show)
+                      deriving(Generic, Eq, Show)
 
 data Direction = DUp | DDown | DLeft | DRight
-                      deriving(Eq, Show)
+                      deriving(Generic, Eq, Show)
 
 data Figure = Figure FigureType Direction Coord 
-                      deriving(Eq, Show)
+                      deriving(Generic, Eq, Show)
+
+instance Binary FigureType
+instance Binary Direction 
+instance Binary Figure
 
 
 -- | Ширина экрана.
@@ -80,3 +93,25 @@ screenWidth = 300
 screenHeight :: Int
 screenHeight = 600
 
+
+data WebGS = WebGS
+  { board   :: Board
+  , figures :: [Figure]
+  , speed   :: Speed
+  , time    :: Time
+  , score   :: Score
+  } deriving (Generic)
+
+instance Binary WebGS
+
+instance WebSocketsData WebGS where
+  fromLazyByteString = decode
+  toLazyByteString   = encode
+
+
+fromWebGS :: WebGS -> Gamestate
+fromWebGS WebGS{..} = (board, figures, (speed, time), score)
+
+
+toWebGS :: Gamestate -> WebGS
+toWebGS (board, figures, (speed, time), score) = WebGS board figures speed time score
