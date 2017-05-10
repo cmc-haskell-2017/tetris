@@ -44,6 +44,9 @@ init_tact = 0.7
 --Доска - упавшие блоки
 type Board = [Coord]
 
+--Вариант развития событий для хода ИИ (профит, смещение, количество поворотов)
+type Variant = (Int, Int, Int)
+
 --Счет
 type Score = Int
 
@@ -467,69 +470,52 @@ updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genE
                                                                  where
                                                                    -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
                                                                    gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
+
 -- ===========================================
 -- AI
+-- Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса
 -- =======================================
-sortBoard :: Board -> Board
-sortBoard []     = []
---sortBoard ((brda,brdb,z):brds) = sortRows (filter (\(x,y,z) -> y > brdb) brds) ++ [(brda,brdb,z)] ++ sortRows (filter (\(x,y,z) -> y <= brdb) brds)
-sortBoard (brd:brds) = sortBoard (filter (\x -> greater x brd ) brds) ++ [brd] ++ sortBoard (filter (\x -> not (greater x brd)) brds)
 
+--Функция сравнения двух элементов доски (нужна для упорядочивания доски).
 greater:: Coord -> Coord -> Bool
 greater (x1,y1,z1) (x2,y2,z2) | x1 > x2 = True
                               | (x1 == x2) && (y1 < y2) = True
                               | otherwise = False
 
-topcells :: Board -> [Coord]
-topcells [] = []
-topcells ((x1,y1,z1):bs) =  (x1,y1,z1) : topcells (filter  (\(x,y,z) -> not (x == x1)) bs)
+--Сортирует доску по столбцам. Столбцы также отсортировываются.
+sortBoard :: Board -> Board
+sortBoard []     = []
+sortBoard (brd:brds) = sortBoard (filter (\x -> greater x brd ) brds) ++ [brd] ++ sortBoard (filter (\x -> not (greater x brd)) brds)
 
---Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса
---numberholes :: Board -> Int
---numberholes crds = sortBoard(crds) 
-
-heightofboard :: Board -> Int
-heightofboard brds  = minimum (map (\(x,y,z) -> y) brds)
-   --                       --| (null brds) = 10
-     --                     --|otherwise =  minimum (map (\(x,y,z) -> y) brds)
-
-mymax :: (Int, Int, Int) -> (Int, Int, Int) -> (Int, Int, Int)
-mymax (x1,y1,t1) (x2,y2,t2) | x1 >= x2 = (x1, y1, t1)
+--Сравнивает, какой вариант лучше
+best :: Variant -> Variant -> Variant
+best (x1,y1,t1) (x2,y2,t2) | x1 >= x2 = (x1, y1, t1)
                       | otherwise = (x2, y2, t2)
 
---bestheight :: [(Int, Int, Int)] -> (Int,Int,Int)
---bestheight [] = (0, -1, 0)
---bestheight ((y,x,t):hs) = mymax  (bestheight hs) (y,x,t)
+--Выбирает наилучший вариант развития событий
+bestVariant :: [Variant] -> Variant
+bestVariant [] = (0, -1, 0)
+bestVariant ((y,x,t):hs) = best (y,x,t) (bestVariant hs) 
 
-bestchoice :: [(Int, Int, Int)] -> (Int,Int,Int)
-bestchoice [] = (0, -1, 0)
-bestchoice ((y,x,t):hs) = mymax (y,x,t) (bestchoice hs) 
+--Высота доски. Имеется ввиду высочайшая точка доски. 
+boardHeight :: Board -> Int
+boardHeight brds  = minimum (map (\(x,y,z) -> y) brds)
 
--- topcells (sortBoard)
--- (сколько поворотов, относительное смещение)
-profitofboard :: Board -> Int
-profitofboard b = 2000 + 10000 * (numberdeletes b) - 100 * (numberholes b) - ((avgheightofboard b) - (heightofboard b))
+--Средняя высота доски
+avgBoardHeight :: Board -> Int
+avgBoardHeight b = div (sumBoardHeight b) 10
 
---figurefromgs brdfromgs
-numberdeletes :: Board -> Int
-numberdeletes b = (heightofboard (deleteRows (sortRows b))) - (heightofboard b)
-
-avgheightofboard :: Board -> Int
-avgheightofboard b = div (sumheightofboard b) 10
-
-numcols :: Board ->  Int
-numcols [] = 0
-numcols ((x1,y1,z1):hs) = 1 +  sumhofb (filter (\(x,y,z) -> not (x == x1)) ((x1,y1,z1):hs))
-
-sumheightofboard :: Board -> Int
-sumheightofboard b = sumhofb (sortBoard b)
+--Сумма высот столбцов доски
+sumBoardHeight :: Board -> Int
+sumBoardHeight b = sumhofb (sortBoard b)
 
 sumhofb :: Board -> Int
 sumhofb [] = 0
 sumhofb ((x1,y1,z1):hs) = y1  +  sumhofb (filter (\(x,y,z) -> not (x == x1)) ((x1,y1,z1):hs))
 
-numberholes :: Board -> Int
-numberholes b = nh (sortBoard b)
+--Количество дырок в доске
+numberHoles :: Board -> Int
+numberHoles b = nh (sortBoard b)
 
 nh :: Board -> Int
 nh [] = 0
@@ -539,82 +525,89 @@ nhcolumn :: [Coord] -> Int
 nhcolumn [] = 0
 nhcolumn ((x1,y1,z1):hs) = (div (screenHeight - y1) blockSize) - length ((x1,y1,z1):hs)
 
---nhcolumn 
+--Количество удаленных строк, после сделанного хода
+numberDeletes :: Board -> Int
+numberDeletes b = (boardHeight (deleteRows (sortRows b))) - (boardHeight b)
+
+-- Оценка состояния доски, после сделанного хода 
+boardProfit :: Board -> Int
+boardProfit b = 2000 + 10000 * (numberDeletes b) - 100 * (numberHoles b) - 10 * ((avgBoardHeight b) - (boardHeight b))
 
 
+-- Анализирует Gamestate. Возвращает (Int, Int, Int) (профит, смещение от центра, количество поворотов). Отрицательное смещение - двигаемся влево. Иначе - вправо.
+bestStep :: Gamestate -> Variant
+bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) =
+   bestVariant ((boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 0) :
+    (boardProfit (updateBoard (dropit (moveLeft gs) (screenHeight-f2))) , -1, 0) :
+    (boardProfit (updateBoard (dropit (moveRight gs) (screenHeight-f2))), 1, 0) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft gs)) (screenHeight-f2))), -2, 0) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight gs)) (screenHeight-f2))), 2, 0) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft gs))) (screenHeight-f2))), -3, 0) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight gs))) (screenHeight-f2))), 3, 0) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft gs)))) (screenHeight-f2))), -4, 0) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight gs)))) (screenHeight-f2))), 4, 0) : 
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft gs))))) (screenHeight-f2))), -5, 0) :
 
-beststep :: Gamestate -> (Int, Int, Int)
-beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) =
-   bestchoice ((profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 0) :
-    (profitofboard (updateBoard (dropit (moveLeft gs) (screenHeight-f2))) , -1, 0) :
-    (profitofboard (updateBoard (dropit (moveRight gs) (screenHeight-f2))), 1, 0) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft gs)) (screenHeight-f2))), -2, 0) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight gs)) (screenHeight-f2))), 2, 0) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft gs))) (screenHeight-f2))), -3, 0) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight gs))) (screenHeight-f2))), 3, 0) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft gs)))) (screenHeight-f2))), -4, 0) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight gs)))) (screenHeight-f2))), 4, 0) : 
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft gs))))) (screenHeight-f2))), -5, 0) :
+    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 1) :
+    (boardProfit (updateBoard (dropit (moveLeft (turn gs)) (screenHeight-f2))) , -1, 1) :
+    (boardProfit (updateBoard (dropit (moveRight (turn gs)) (screenHeight-f2))), 1, 1) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn gs))) (screenHeight-f2))), -2, 1) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn gs))) (screenHeight-f2))), 2, 1) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn gs)))) (screenHeight-f2))), -3, 1) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn gs)))) (screenHeight-f2))), 3, 1) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn gs))))) (screenHeight-f2))), -4, 1) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn gs))))) (screenHeight-f2))), 4, 1) : 
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn gs)))))) (screenHeight-f2))), -5, 1) :
 
-    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 1) :
-    (profitofboard (updateBoard (dropit (moveLeft (turn gs)) (screenHeight-f2))) , -1, 1) :
-    (profitofboard (updateBoard (dropit (moveRight (turn gs)) (screenHeight-f2))), 1, 1) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn gs))) (screenHeight-f2))), -2, 1) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn gs))) (screenHeight-f2))), 2, 1) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn gs)))) (screenHeight-f2))), -3, 1) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn gs)))) (screenHeight-f2))), 3, 1) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn gs))))) (screenHeight-f2))), -4, 1) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn gs))))) (screenHeight-f2))), 4, 1) : 
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn gs)))))) (screenHeight-f2))), -5, 1) :
+    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 2) :
+    (boardProfit (updateBoard (dropit (moveLeft (turn (turn gs))) (screenHeight-f2))) , -1, 2) :
+    (boardProfit (updateBoard (dropit (moveRight (turn (turn gs))) (screenHeight-f2))), 1, 2) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn (turn gs)))) (screenHeight-f2))), -2, 2) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn (turn gs)))) (screenHeight-f2))), 2, 2) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn gs))))) (screenHeight-f2))), -3, 2) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn gs))))) (screenHeight-f2))), 3, 2) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs)))))) (screenHeight-f2))), -4, 2) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn gs)))))) (screenHeight-f2))), 4, 2) : 
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs))))))) (screenHeight-f2))), -5, 2) :
 
-    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 2) :
-    (profitofboard (updateBoard (dropit (moveLeft (turn (turn gs))) (screenHeight-f2))) , -1, 2) :
-    (profitofboard (updateBoard (dropit (moveRight (turn (turn gs))) (screenHeight-f2))), 1, 2) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn (turn gs)))) (screenHeight-f2))), -2, 2) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn (turn gs)))) (screenHeight-f2))), 2, 2) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn gs))))) (screenHeight-f2))), -3, 2) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn gs))))) (screenHeight-f2))), 3, 2) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs)))))) (screenHeight-f2))), -4, 2) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn gs)))))) (screenHeight-f2))), 4, 2) : 
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs))))))) (screenHeight-f2))), -5, 2) :
-
-    (profitofboard (updateBoard (dropit gs (screenHeight-f2))), 0, 3) :
-    (profitofboard (updateBoard (dropit (moveLeft (turn (turn (turn gs)))) (screenHeight-f2))) , -1, 3) :
-    (profitofboard (updateBoard (dropit (moveRight (turn (turn (turn gs)))) (screenHeight-f2))), 1, 3) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (turn (turn (turn gs))))) (screenHeight-f2))), -2, 3) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (turn (turn (turn gs))))) (screenHeight-f2))), 2, 3) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))) (screenHeight-f2))), -3, 3) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn (turn gs)))))) (screenHeight-f2))), 3, 3) :
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs))))))) (screenHeight-f2))), -4, 3) :
-    (profitofboard (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn (turn gs))))))) (screenHeight-f2))), 4, 3) : 
-    (profitofboard (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))))) (screenHeight-f2))), -5, 3) :
+    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 3) :
+    (boardProfit (updateBoard (dropit (moveLeft (turn (turn (turn gs)))) (screenHeight-f2))) , -1, 3) :
+    (boardProfit (updateBoard (dropit (moveRight (turn (turn (turn gs)))) (screenHeight-f2))), 1, 3) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn (turn (turn gs))))) (screenHeight-f2))), -2, 3) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn (turn (turn gs))))) (screenHeight-f2))), 2, 3) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))) (screenHeight-f2))), -3, 3) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn (turn gs)))))) (screenHeight-f2))), 3, 3) :
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs))))))) (screenHeight-f2))), -4, 3) :
+    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn (turn gs))))))) (screenHeight-f2))), 4, 3) : 
+    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))))) (screenHeight-f2))), -5, 3) :
 
     [])
       where
         gs = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) 
 
-makestep:: Gamestate -> Gamestate 
-makestep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
+
+--в newTact вызывается makeStep 4 раза. Т.е ИИ делает 4 хода в такт. 
+makeStep:: Gamestate -> Gamestate 
+makeStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
   | needturn = turn (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
   | needleft = moveLeft (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
   | needright = moveRight (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)  
   | otherwise   = dropit (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) (screenHeight-f2)
     where
-      needturn = (\(x,y,t) -> t) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
-      needleft = (\(x,y,t) -> y) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) < 0
-      needright = (\(x,y,t) -> y) (beststep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
+      needturn = (\(x,y,t) -> t) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
+      needleft = (\(x,y,t) -> y) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) < 0
+      needright = (\(x,y,t) -> y) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
 
 
 -- ===========================================
 -- timing
 -- =======================================
 
-
 newTact::Gamestate -> Float -> Float -> Gamestate
 newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
   | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
   | new && collides = (deleteRows (sortRows (updateBoard (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s))), rest, (sp, ti), s + 1)
-  | new = newTact (makestep(makestep(makestep(makestep (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s))))) (dt + ti - tact) tact
+  | new = newTact (makeStep(makeStep(makeStep(makeStep (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s))))) (dt + ti - tact) tact
   | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s)
   | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s)
                                         where
