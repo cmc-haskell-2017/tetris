@@ -14,7 +14,7 @@ run = do
  g <- newStdGen
  play display bgColor fps (genUniverse g ) drawTetris handleTetris updateTetris
    where
-    display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
+    display = InWindow "Tetris" (screenWidthreal, screenHeightreal) (0, 0)
     bgColor = black   -- цвет фона
     fps     = glob_fps   -- кол-во кадров в секунду
 
@@ -23,8 +23,11 @@ run = do
 -- =========================================
 -- Types
 -- =========================================
+screenWidthreal :: Int
+screenWidthreal = 800
 
-
+screenHeightreal :: Int
+screenHeightreal = 800
 
 blockSize :: Int
 blockSize = 30
@@ -256,17 +259,24 @@ startGame  _ =  0
 
 
 moveLeft::Gamestate -> Gamestate
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,p,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,p,k)
-        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,p,k)
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,0,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
+        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,0,k)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,1,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
+        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,1,k)
+  where 
+    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
 
 moveRight::Gamestate -> Gamestate
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,p,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,p,k)
-        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,p,k)
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,0,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
+        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,0,k)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
-
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,1,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
+        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,1,k)
+  where 
+    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
 
 collidesBlock::Coord -> Bool
 collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
@@ -352,7 +362,7 @@ dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,0,k) pts  | collide = (a,((Figur
 dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,1,k) pts  | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,1,k)                   
                                                   | otherwise = dropit (a,((Figure sha dir (b,c + 1,z)):rest),d,e,v,1,k) pts                                        
                                           where                                           
-                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a                                              
+                                              collide = collidesFigureDownSmooth (figureToDraw (Figure sha dir (b,c + blockSize,z))) a                                              
 
 
 drawBoard::Board  -> Picture
@@ -361,7 +371,7 @@ drawBoardCircle :: Board -> Picture
 drawBoardCircle s = pictures (map drawBlockCircle s)
 --(b==(324)||b==323||b == 322||b == 325||b == 326||b==321||b == 327||b==288||b==0  )
 drawBlockCircle :: Coord-> Picture
-drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color blue  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ),
@@ -371,10 +381,11 @@ drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                     |(b==270) = 
-   pictures[ color blue   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-   color magenta  (thickArc (fromIntegral (324  )) (fromIntegral (359  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (324  )) (fromIntegral (359  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )  ]                 
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ (rotate (-324) (color blue   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ))),
+  (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )) ) ]))
+    ]                 
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color blue   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
    color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
@@ -385,7 +396,7 @@ drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color yellow  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2  ) (fromIntegral 1) ),
@@ -395,11 +406,11 @@ drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                         |(b==270) = 
-       pictures [color yellow   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-       color magenta   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
-       color magenta   (thickArc (324) (359) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) 
-         ]
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+    pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (   pictures [(rotate (-324) (color yellow   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) )),
+      (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) )),
+      (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ))
+         ]))]
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color yellow   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
@@ -411,7 +422,7 @@ drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color red  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 6) ),
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ) ,
@@ -421,10 +432,10 @@ drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                  |(b==270) = 
-   pictures [ color red   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ]
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+ pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (  pictures [(rotate (-324) (color red   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ,
+  (rotate (-324) ( color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
+  (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) )) ]))]
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color red   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
@@ -436,7 +447,7 @@ drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color green  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ),
@@ -446,10 +457,10 @@ drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                   |(b==270) = 
-    pictures [color green   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-    color magenta   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-    color magenta   (thickArc (324) (359) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ]
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (  pictures [(rotate (-324) (color green   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
+    (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ))]))]
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color green   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
@@ -461,7 +472,7 @@ drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color orange  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 6) ),
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 1) ),
@@ -471,10 +482,10 @@ drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                   |(b==270) = 
-   pictures [ color orange   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )  ]
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures [ (rotate (-324) (color orange   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))) ,
+   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )))  ]))]
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color orange   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
@@ -486,7 +497,7 @@ drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - 100) (scale 2.3 2.3  (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color white  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ),
   color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 1) ) ,
@@ -496,10 +507,10 @@ drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) h (scale  1.3 1.3 
    ]))
     ]
                  |(b==270) = 
-   pictures [ color white   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-   color magenta   (thickArc (324) (359) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ]
-                   |otherwise = pictures [ translate (-w) h (scale  1.3 1.3 (pictures
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures [ (rotate (-324) (color white   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+  (rotate (-324)  (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ))) ]))]
+                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color white   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
@@ -661,7 +672,7 @@ drawTetris (b,fs,s,t,tetristype,p,k) | tetristype==1 =  pictures
   [ drawFigureCircle (b,fs,s,t,tetristype,p,k),
    drawBoardCircle b ,
     drawScore t,
-    (scale 1.3 1.3 (color cyan (circle  ( 115)))),
+    translate (0) ((0) - 100) (scale 1.3 1.3 (color cyan (circle  ( 205)))),
     translate (-0.3 * fieldWidth/2 + 113) (fieldHeight/2 + (fromIntegral screenHeight /2) - 53)
   (roundedRect (withAlpha 0.7 white) (greyN 0.7) ( fieldWidth/2 + 43) ((fromIntegral screenHeight / 10) + fieldHeight / 15) (0.1 * fieldWidth) (0.02 * fieldWidth)),
   drawmenuCircle,
@@ -680,7 +691,9 @@ drawTetris (b,fs,s,t,tetristype,p,k) | tetristype==1 =  pictures
   drawmenuCircle,
   drawmenuSmooth,
   drawtextCircle,
-  drawtextSmooth  
+  drawtextSmooth  ,
+  pictures [ translate ((-(fromIntegral screenWidth  / 2))) (fromIntegral screenHeight / 2) (scale  1 1    (color cyan (line [(0,0) , (0,-600),(300,-600),(300,0),(0,0)])))]
+  
   
   
   ] 
@@ -699,9 +712,9 @@ drawtextCircle = translate (-(fromIntegral screenWidth  / 2) + 123) (fromIntegra
 
 drawScore :: Score -> Picture
 drawScore score = translate (-w) h (scale 30 30 (pictures
-  [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
+  [ --color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ]),            -- белая рамка
+   --color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
+   translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
   ]))
   where
     w = fromIntegral screenWidth  / 2
