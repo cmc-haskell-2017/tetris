@@ -24,9 +24,9 @@ data MP_Gamestate = MP_Gamestate
 
 handleUpdatesMP :: MP_Gamestate -> IO ()
 handleUpdatesMP MP_Gamestate{..} = forever $ do
-  putStrLn "here!"
+  -- putStrLn "here!"
   gs <- receiveData connection
-  putStrLn "there!"
+  -- putStrLn "there!"
   atomically $ writeTVar state (fromWebGS gs)
 
 

@@ -122,4 +122,4 @@ fromWebGS WebGS{..} = (board, figures, (speed, time), score)
 
 
 toWebGS :: Gamestate -> WebGS
-toWebGS (board, figures, (speed, time), score) = WebGS board figures speed time score
+toWebGS (board, figures, (speed, time), score) = WebGS board (take 10 figures) speed time score

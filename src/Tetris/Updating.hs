@@ -14,7 +14,7 @@ import Tetris.Colliding
 
 
 isGameOver::Gamestate -> Bool
-isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
+isGameOver (a, f1:f2:rest ,(sp, ti),e) = collidesFigureDown (figureToDraw f2) a
 
 
 sortRows :: Board -> Board
