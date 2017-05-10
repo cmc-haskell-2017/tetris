@@ -24,9 +24,9 @@ data MP_Gamestate = MP_Gamestate
 
 handleUpdatesMP :: MP_Gamestate -> IO ()
 handleUpdatesMP MP_Gamestate{..} = forever $ do
-  putStrLn "there!"
-  gs <- receiveData connection
   putStrLn "here!"
+  gs <- receiveData connection
+  putStrLn "there!"
   atomically $ writeTVar state (fromWebGS gs)
 
 
@@ -61,23 +61,6 @@ updateTetrisMP dt gs = do
   return gs
 
 
--- main :: IO ()
--- main = do
---   universe <- atomically $ newTVar emptyUniverse
---   runClient "localhost" 8000 "/connect" $ \conn -> do
---     let gs = GameState universe conn
---     _ <- forkIO (handleUpdates gs)
---     playIO display bgColor fps gs renderGame handleGame updateGame
---   where
---     winOffset = (100, 100)
---     display   = InWindow "Game of Snakes" (w, h) winOffset
---     bgColor   = black
---     fps       = 60
-
---     (fieldWidth, fieldHeight) = fieldSize
---     (w, h) = (floor fieldWidth, floor fieldHeight)
-
-
 main :: IO ()
 main = do
  g <- newStdGen
@@ -90,10 +73,3 @@ main = do
     display  = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor  = black      -- цвет фона
     fps      = glob_fps   -- кол-во кадров в секунду
-
- -- forkIO $ play display bgColor fps universe drawTetris handleTetris updateTetris
- --   where
- --   	universe = genUniverse g
- --    display  = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
- --    bgColor  = black   -- цвет фона
- --    fps      = glob_fps   -- кол-во кадров в секунду
