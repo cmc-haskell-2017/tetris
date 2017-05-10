@@ -94,21 +94,52 @@ screenHeight :: Int
 screenHeight = 600
 
 
-data WebGS = WebGS
-  { board   :: Board
+-- this should replace current gamestate (tuple)
+data GameState = GameState
+ {  board   :: Board
   , figures :: [Figure]
   , speed   :: Speed
   , time    :: Time
   , score   :: Score
   } deriving (Generic)
 
-instance Show WebGS where
-	show WebGS{..} = 
+
+instance Show GameState where
+	show GameState{..} = 
 		show board ++ " " ++
 		show (head figures) ++ " " ++ 
 		show speed ++ " " ++
 		show time ++ " " ++
 		show score ++ "end "
+
+fromGS :: GameState -> Gamestate
+fromGS GameState{..} = (board, figures, (speed, time), score)
+
+
+toGS :: Gamestate -> GameState
+toGS (board, figures, (speed, time), score) = GameState board figures speed time score
+
+
+toWeb :: GameState -> WebGS
+toWeb GameState{..} = WebGS board (take 10 figures) speed time score
+
+
+
+data WebGS = WebGS
+  { w_board   :: Board
+  , w_figures :: [Figure]
+  , w_speed   :: Speed
+  , w_time    :: Time
+  , w_score   :: Score
+  } deriving (Generic)
+
+instance Show WebGS where
+	show WebGS{..} = 
+		show w_board ++ " " ++
+		show (head w_figures) ++ " " ++ 
+		show w_speed ++ " " ++
+		show w_time ++ " " ++
+		show w_score ++ "end "
 
 instance Binary WebGS
 
@@ -118,7 +149,7 @@ instance WebSocketsData WebGS where
 
 
 fromWebGS :: WebGS -> Gamestate
-fromWebGS WebGS{..} = (board, figures, (speed, time), score)
+fromWebGS WebGS{..} = (w_board, w_figures, (w_speed, w_time), w_score)
 
 
 toWebGS :: Gamestate -> WebGS

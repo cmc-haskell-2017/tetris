@@ -29,7 +29,7 @@ import Tetris
 
 -- | Server config.
 data Config = Config
-  { configUniverse  :: TVar WebGS               -- ^ The current state of the universe.
+  { configUniverse  :: TVar GameState               -- ^ The current state of the universe.
   , configClients   :: TVar (Map PlayerName Client) -- ^ All connected clients by a unique name.
   , configNames     :: TVar [PlayerName]            -- ^ Source of new names.
   }
@@ -42,7 +42,7 @@ mkDefaultConfig :: IO Config
 mkDefaultConfig = do
   g <- newStdGen
   cfg <- atomically $ Config
-          <$> newTVar (toWebGS $ genUniverse g)
+          <$> newTVar (toGS $ genUniverse g)
           <*> newTVar Map.empty
           <*> newTVar (map show [1..])
   return cfg
@@ -98,15 +98,15 @@ handleActions name conn cfg@Config{..} = forever $ do
     modifyTVar configUniverse (handlePlayerAction action name)
 
 
-handlePlayerAction :: Action -> PlayerName -> WebGS -> WebGS
-handlePlayerAction act name gs@WebGS{..}
-  | Text.head act == 'l' = toWebGS $ moveRight $ fromWebGS gs 
-  | Text.head act == 'j' = toWebGS $ moveLeft $ fromWebGS gs 
-  | Text.head act == 'k' = toWebGS $ turn $ fromWebGS gs 
-  | Text.head act == ' ' = toWebGS $ dropit pts $ fromWebGS gs 
-  | Text.head act == 'p' = toWebGS $ pause $ fromWebGS gs 
+handlePlayerAction :: Action -> PlayerName -> GameState -> GameState
+handlePlayerAction act name gs@GameState{..}
+  | Text.head act == 'l' = toGS $ moveRight $ fromGS gs 
+  | Text.head act == 'j' = toGS $ moveLeft $ fromGS gs 
+  | Text.head act == 'k' = toGS $ turn $ fromGS gs 
+  | Text.head act == ' ' = toGS $ dropit pts $ fromGS gs 
+  | Text.head act == 'p' = toGS $ pause $ fromGS gs 
     where
-      pts = getSndCoord $ fromWebGS gs
+      pts = getSndCoord $ fromGS gs
   -- return gs
 
 
@@ -119,9 +119,9 @@ periodicUpdates :: Int -> Config -> IO ()
 periodicUpdates ms cfg@Config{..} = forever $ do
   threadDelay ms -- wait ms milliseconds
   universe <- atomically $ do
-    res <- (updateTetris secs . fromWebGS) <$> readTVar configUniverse
-    writeTVar configUniverse $ toWebGS res
-    return (toWebGS res)
+    res <- (updateTetris secs . fromGS) <$> readTVar configUniverse
+    writeTVar configUniverse $ toGS res
+    return (toGS res)
   return ()
   -- putStrLn "here!"
   broadcastUpdate universe cfg
@@ -130,13 +130,13 @@ periodicUpdates ms cfg@Config{..} = forever $ do
 
 
 
-broadcastUpdate :: WebGS -> Config -> IO ()
+broadcastUpdate :: GameState -> Config -> IO ()
 broadcastUpdate gs cfg@Config{..} = do
   clients <- readTVarIO configClients
   txt <- do return (Text.singleton 'f')
   mapM_ (forkIO . sendUpdate) (Map.toList clients)
   where
-    sendUpdate (name, conn) = sendBinaryData conn gs `catch` handleClosedConnection name
+    sendUpdate (name, conn) = sendBinaryData conn (toWeb gs) `catch` handleClosedConnection name
 
     handleClosedConnection :: PlayerName -> ConnectionException -> IO ()
     handleClosedConnection name _ = do
