@@ -48,7 +48,7 @@ type Score = Int
 
 --Координаты фигуры, поворот однозначно определяется 
 --их последовательностью
-type Coord = (Int, Int,Int)
+type Coord = (Int, Int, Int)
 
 --время
 type Time = Float

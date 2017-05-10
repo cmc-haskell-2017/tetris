@@ -18,7 +18,7 @@ handleTetris (EventKey (Char 'l') Up _ _) t = t
 handleTetris (EventKey (Char 'j') Down _ _)  (a,(Figure sha dir (b,c,z):rest),d,e)  = moveLeft (a,(Figure sha dir (b,c,z):rest),d,e)
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e)  = dropit (a,(Figure sha dir (b,c,z):rest),d,e) (screenHeight-c)
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e)  = dropit (screenHeight-c) (a,(Figure sha dir (b,c,z):rest),d,e)
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
 handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e) = turn (a, (Figure sha dir (b ,c,z):rest),d,e)
@@ -55,9 +55,9 @@ turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e
 
 
 
-dropit::Gamestate -> Int -> Gamestate
-dropit (a,((Figure sha dir (b,c,z)):rest),d,e) pts  | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize))                   
-                                                  | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e) pts                                        
+dropit::Int -> Gamestate -> Gamestate
+dropit pts (a,((Figure sha dir (b,c,z)):rest),d,e) | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize))                   
+                                                  | otherwise = dropit pts (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e)                                     
                                           where                                           
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
 

@@ -54,7 +54,9 @@ renderTetris MP_Gamestate{..} = do
 
 -- does nothing
 updateTetrisMP :: Float -> MP_Gamestate -> IO MP_Gamestate
-updateTetrisMP _ gs = return gs
+updateTetrisMP dt gs = do
+  sendIvent (Text.singleton 'd') gs
+  return gs
 
 
 -- main :: IO ()
