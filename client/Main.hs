@@ -24,7 +24,9 @@ data MP_Gamestate = MP_Gamestate
 
 handleUpdatesMP :: MP_Gamestate -> IO ()
 handleUpdatesMP MP_Gamestate{..} = forever $ do
+  putStrLn "there!"
   gs <- receiveData connection
+  putStrLn "here!"
   atomically $ writeTVar state (fromWebGS gs)
 
 
@@ -55,7 +57,7 @@ renderTetris MP_Gamestate{..} = do
 -- does nothing
 updateTetrisMP :: Float -> MP_Gamestate -> IO MP_Gamestate
 updateTetrisMP dt gs = do
-  sendIvent (Text.singleton 'd') gs
+  -- sendIvent (Text.singleton 'd') gs
   return gs
 
 

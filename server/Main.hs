@@ -57,8 +57,9 @@ type Action = Text.Text
 main :: IO ()
 main = do
   config <- mkDefaultConfig
-  -- forkIO $ periodicUpdates 10000 config   -- update Universe every 10 milliseconds
+  -- forkIO $ periodicUpdates 10000 config
   run 8000 $ server config
+  
 
 
 -- | The Game of Snakes server 'Application'.
@@ -70,12 +71,15 @@ server config@Config{..} = websocketsOr defaultConnectionOptions wsApp backupApp
       cl <- readTVarIO configClients
       conn <- acceptRequest pending_conn
       name <- addClient conn config
-      if length cl > 0 
-      then 
-        do return ()
-      else 
-        -- putStrLn $ name ++ " joined!"
-        handleActions name conn config
+      putStrLn $ show name
+
+      -- sand conn '!'
+      -- if length cl > 0 
+      -- then 
+      handleActions name conn config
+      -- else 
+      --   handleActions name conn config
+        -- periodicUpdates 10000 config
 
         -- conn <- acceptRequest pending_conn
         -- name <- addClient conn config
@@ -88,9 +92,17 @@ server config@Config{..} = websocketsOr defaultConnectionOptions wsApp backupApp
 -- | Add a new client to the server state.
 -- This will update 'configClients' and add
 -- a new player to the 'configUniverse'.
+
+
+-- sand :: Client -> Char -> IO ()
+-- sand cl d = forever $ do
+--    txt <- do return (Text.singleton d)
+--    sendBinaryData cl txt
+
 addClient :: Client -> Config -> IO PlayerName
-addClient client Config{..} = do
+addClient client config@Config{..} = do
   g <- newStdGen
+  forkIO $ periodicUpdates 10000 config
   atomically $ do
     name:names <- readTVar configNames
     writeTVar configNames names
@@ -133,6 +145,13 @@ periodicUpdates ms cfg@Config{..} = forever $ do
     res <- (updateTetris secs . fromWebGS) <$> readTVar configUniverse
     writeTVar configUniverse $ toWebGS res
     return (toWebGS res)
+  return ()
+  putStrLn "here!"
+  -- conn <- do return $ head $ Map.toList $ readTVar configClients
+  -- sand conn '!'
+  -- sand universe cfg
+
+  -- putStrLn "there!"
   broadcastUpdate universe cfg
   where
     -- FIXME: (ms / 10^6) is not the actual time that has passed since the previous update
@@ -142,10 +161,26 @@ periodicUpdates ms cfg@Config{..} = forever $ do
 -- | Send every 'Client' updated 'Universe' concurrently.
 
 
+-- sand :: WebGS -> Config -> IO ()
+-- sand gs cfg@Config{..} = do
+--    clients <- readTVarIO configClients
+--    conn <- do return (head $ Map.elems $ clients)
+--    txt <- do return (Text.singleton 'f')
+   -- forkIO $ sendBinaryData conn txt
+
+
 broadcastUpdate :: WebGS -> Config -> IO ()
 broadcastUpdate gs cfg@Config{..} = do
   clients <- readTVarIO configClients
+  -- _ <- do 
+    -- tmp <- readTVarIO configUniverse
+  putStrLn $ show gs
+  -- gamestate <- readTVarIO configUniverse
+  txt <- do return (Text.singleton 'f')
+  -- forkIO . sendUpdate 
   mapM_ (forkIO . sendUpdate) (Map.toList clients)
+
+  -- putStrLn (show $ Map.keys $ clients)
   where
     sendUpdate (name, conn) = sendBinaryData conn gs `catch` handleClosedConnection name
 

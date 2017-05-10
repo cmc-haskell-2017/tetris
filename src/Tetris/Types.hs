@@ -102,6 +102,14 @@ data WebGS = WebGS
   , score   :: Score
   } deriving (Generic)
 
+instance Show WebGS where
+	show WebGS{..} = 
+		show board ++ " " ++
+		show (head figures) ++ " " ++ 
+		show speed ++ " " ++
+		show time ++ " " ++
+		show score ++ "end "
+
 instance Binary WebGS
 
 instance WebSocketsData WebGS where
