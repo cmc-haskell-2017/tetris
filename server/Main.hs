@@ -29,11 +29,11 @@ import Network.Wai.Handler.Warp (run)
 import Tetris
 
 
-data State = Active | Closed deriving(Eq, Show)
+data State = Active | Waiting | Closed deriving(Eq, Show)
 
 -- | Server config.
 data Config = Config
-  { configUniverse  :: TVar GameState               -- ^ The current state of the universe.
+  { configUniverse  :: TVar (Map PlayerName GameState)               -- ^ The current state of the universe.
   , configClients   :: TVar (Map PlayerName Client) -- ^ All connected clients by a unique name.
   , configNames     :: TVar [PlayerName]            -- ^ Source of new names.
   , controlThreads  :: TVar (Map PlayerName ThreadId)
@@ -48,7 +48,7 @@ mkDefaultConfig :: IO Config
 mkDefaultConfig = do
   g <- newStdGen
   cfg <- atomically $ Config
-          <$> newTVar (toGS $ genUniverse g)
+          <$> newTVar Map.empty
           <*> newTVar Map.empty
           <*> newTVar (map show [1..])
           <*> newTVar Map.empty
@@ -84,7 +84,7 @@ server config@Config{..} = websocketsOr defaultConnectionOptions wsApp backupApp
       name <- addClient conn config
       putStrLn $ show name
 
-      if t < 1 then
+      if t < 2 then
         handleActions name conn config
       else
         putStrLn "too many players!"
@@ -120,6 +120,7 @@ addClient client config@Config{..} = do
     writeTVar configNames names
     modifyTVar configClients (Map.insert name client)
     modifyTVar controlThreads (Map.insert name forkId)
+    modifyTVar configUniverse (Map.insert name (toGS $ genUniverse g))
     return name
 
 getLength :: Config -> IO Int
@@ -132,7 +133,9 @@ handleActions name conn cfg@Config{..} = forever $ do
   action <- receiveData conn
   -- putStrLn ("recieved!!" ++ show action)
   atomically $ do
-    modifyTVar configUniverse (handlePlayerAction action name)
+    universe <- readTVar configUniverse
+    gamestate <- return (universe Map.! name)
+    modifyTVar configUniverse (Map.adjust (handlePlayerAction action name) name)
 
 
 handlePlayerAction :: Action -> PlayerName -> GameState -> GameState
@@ -159,16 +162,19 @@ periodicUpdates ms cfg@Config{..} = forever $ do
   stateIO <- readTVarIO configState
   disconnectState stateIO
   universe <- atomically $ do
-    state <- readTVar configState
-    res <- (updateTetris secs . fromGS) <$> readTVar configUniverse
-    writeTVar configUniverse $ toGS res
-    return (toGS res)
+    -- state <- readTVar configState
+    res <- ((map (updateT secs)) . Map.toList) <$> readTVar configUniverse
+    writeTVar configUniverse $ Map.fromList res
+    return (Map.fromList res)
   return ()
   -- putStrLn "here!"
   broadcastUpdate universe cfg
   where
     secs = fromIntegral ms / 1000000
 
+
+updateT :: Float -> (PlayerName, GameState) -> (PlayerName, GameState)
+updateT secs (n, gs) = (n, toGS (updateTetris secs (fromGS gs)))
 
 
 disconnectState :: State -> IO ()
@@ -179,13 +185,13 @@ disconnectState _ = do return ()
 
 
 
-broadcastUpdate :: GameState -> Config -> IO ()
-broadcastUpdate gs cfg@Config{..} = do
+broadcastUpdate :: (Map PlayerName GameState) -> Config -> IO ()
+broadcastUpdate un cfg@Config{..} = do
   clients <- readTVarIO configClients
   txt <- do return (Text.singleton 'f')
   mapM_ (forkIO . sendUpdate) (Map.toList clients)
   where
-    sendUpdate (name, conn) = sendBinaryData conn (toWeb gs) `catch` handleClosedConnection name
+    sendUpdate (name, conn) = sendBinaryData conn (toWeb (un Map.! name)) `catch` handleClosedConnection name
 
     handleClosedConnection :: PlayerName -> ConnectionException -> IO ()
     handleClosedConnection name _ = do
