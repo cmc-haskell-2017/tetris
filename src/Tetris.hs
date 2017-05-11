@@ -1,11 +1,12 @@
 module Tetris where
 
 import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
+import Graphics.Gloss.Data.Vector()
+import Graphics.Gloss.Geometry.Line()
 import Graphics.Gloss.Interface.Pure.Game
-import GHC.Float
+import GHC.Float()
 
+glob_fps :: Int
 glob_fps = 60
 
 run :: IO ()
@@ -97,7 +98,7 @@ genFigure a | a== 0  =  Figure O DUp (div screenWidth 2, blockSize * 2,0)
             | a== 3  =  Figure J DUp (div screenWidth 2, blockSize * 2,3) 
             | a== 4  =  Figure L DUp (div screenWidth 2, blockSize * 2,4) 
             | a== 5  =  Figure S DUp (div screenWidth 2, blockSize * 2,5) 
-            | a== 6  =  Figure Z DUp (div screenWidth 2, blockSize * 2,6) 
+            | otherwise  =  Figure Z DUp (div screenWidth 2, blockSize * 2,6) 
 ------------------------------------------------------------------------------------------------------------------------------------------
 
 -- | Генерируем бесконечный список из случайных фигур
@@ -148,6 +149,7 @@ turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e
                                      | otherwise = (a,(Figure t DUp c):rest,d,e)
                             where 
                                 collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
+turn gs = gs
 
 -- | Готовим фигуры к отрисовке
 figureToDraw::Figure->BlockedFigure
@@ -161,34 +163,43 @@ figureToDraw (Figure Z d c) = figureToDrawZ (Figure Z d c)
 
 figureToDrawO::Figure -> BlockedFigure
 figureToDrawO (Figure O _ (x, y,z)) = ((x, y,z), (x+blockSize, y,z), (x, y-blockSize,z), (x+blockSize, y-blockSize,z))
+figureToDrawO _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
 
 figureToDrawI::Figure -> BlockedFigure
 figureToDrawI (Figure I d (x, y,z)) | (d == DUp) || (d == DDown) = ((x, y+blockSize,z), (x, y,z), (x, y-blockSize,z), (x, y-2*blockSize,z))
                   | otherwise = ((x-blockSize, y,z), (x, y,z), (x+blockSize, y,z), (x+2*blockSize, y,z))
+figureToDrawI _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
+
 figureToDrawZ::Figure -> BlockedFigure
 figureToDrawZ (Figure Z d (x, y,z)) | (d == DUp) || (d == DDown) = ((x-blockSize, y-blockSize,z), (x-blockSize, y,z), (x, y,z), (x, y+blockSize,z))
                     | otherwise = ((x-blockSize, y,z), (x, y,z), (x, y-blockSize,z), (x+blockSize, y-blockSize,z))
+figureToDrawZ _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
+
 figureToDrawS::Figure -> BlockedFigure
 figureToDrawS (Figure S d (x, y,z)) | (d == DUp) || (d == DDown) = ((x-blockSize, y+blockSize,z), (x-blockSize, y,z), (x, y,z), (x, y-blockSize,z))
                     | otherwise = ((x-blockSize, y,z), (x, y,z), (x, y+blockSize,z), (x+blockSize, y+blockSize,z))
+figureToDrawS _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
 
 figureToDrawJ::Figure -> BlockedFigure
 figureToDrawJ (Figure J d (x,y,z)) | d == DDown = ((x-blockSize, y-blockSize,z), (x, y-blockSize,z), (x, y,z), (x, y+blockSize,z))
                  | d == DUp = ((x, y-blockSize,z), (x, y,z), (x, y+blockSize,z), (x+blockSize, y+blockSize,z))
                  | d == DRight = ((x-blockSize, y,z), (x, y,z), (x+blockSize, y,z), (x+blockSize, y-blockSize,z))
                  | otherwise = ((x-blockSize, y+blockSize,z), (x-blockSize, y,z), (x, y,z), (x+blockSize, y,z))
+figureToDrawJ _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
 
 figureToDrawL::Figure -> BlockedFigure
 figureToDrawL (Figure L d (x,y,z)) | d == DDown = ((x, y+blockSize,z), (x, y,z), (x, y-blockSize,z), (x+blockSize, y-blockSize,z))
                  | d == DUp = ((x, y-blockSize,z), (x, y,z), (x, y+blockSize,z), (x-blockSize, y+blockSize,z))
                  | d == DRight = ((x-blockSize, y,z), (x, y,z), (x+blockSize, y,z), (x+blockSize, y+blockSize,z))
                  | otherwise = ((x-blockSize, y-blockSize,z), (x-blockSize, y,z), (x, y,z), (x+blockSize, y,z))
+figureToDrawL _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
 
 figureToDrawT::Figure -> BlockedFigure
 figureToDrawT (Figure T d (x,y,z)) | d == DDown = ((x-blockSize, y,z), (x, y,z), (x+blockSize, y,z), (x, y-blockSize,z))
                  | d == DUp = ((x-blockSize, y,z), (x, y,z), (x+blockSize, y,z), (x, y+blockSize,z))
                  | d == DRight = ((x, y+blockSize,z), (x, y,z), (x, y-blockSize,z), (x+blockSize, y,z))
                  | otherwise = ((x, y+blockSize,z), (x, y,z), (x, y-blockSize,z), (x-blockSize, y,z))
+figureToDrawT _ = ((0,0,0), (0,0,0), (0,0,0), (0,0,0))
 
 -- | Принимает пустую доску, моделирует всю игру, послеокончания возвращает счет
 startGame::Board -> Score
@@ -197,9 +208,10 @@ startGame  _ =  0
 -- | Шаг влево
 moveLeft::Gamestate -> Gamestate
 moveLeft (a,((Figure s t (b,c,z)):rest),d,e) | collide = (a, ((Figure s t (b,c,z)):rest),d,e)
-        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e)
+                              |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
+moveLeft gs = gs
 
 -- | Шаг вправо 
 moveRight::Gamestate -> Gamestate
@@ -207,31 +219,32 @@ moveRight (a,(Figure s t (b,c,z)):rest,d,e) | collide = (a, ((Figure s t (b,c,z)
         |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
+moveRight gs = gs
 
 -- | Проверка: пересекается ли блок
 collidesBlock::Coord -> Bool
-collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
+collidesBlock (a,b,_) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
 
 -- | Проверка: пересекается ли блок
 collidesBlockSides::Coord -> Board -> Bool
-collidesBlockSides (a,b,z) [] = (a < 0) || (a  + blockSize > screenWidth)
-collidesBlockSides (a,b,z) ((brda, brdb,z1):[]) = (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)
-collidesBlockSides (a,b,z) ((brda, brdb,z1):brds) | (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
+collidesBlockSides (a,_,_) [] = (a < 0) || (a  + blockSize > screenWidth)
+collidesBlockSides (a,b,_) ((brda, brdb,_):[]) = (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)
+collidesBlockSides (a,b,z) ((brda, brdb,_):brds) | (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
                                              | otherwise = collidesBlockSides (a,b,z) brds
 
 -- | Проверка: пересекается ли блок
 collidesBlockDown::Coord -> Board-> Bool
-collidesBlockDown (a,b,z) []  =   (b + blockSize > screenHeight)
-collidesBlockDown (a,b,z) ((brda,brdb,z1):[])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
-collidesBlockDown (a,b,z) ((brda,brdb,z1):brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
+collidesBlockDown (_,b,_) []  =   (b + blockSize > screenHeight)
+collidesBlockDown (a,b,_) ((brda,brdb,_):[])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
+collidesBlockDown (a,b,z) ((brda,brdb,_):brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
                                             |  otherwise = collidesBlockDown (a,b,z) brds
 
 -- | Проверка: пересекается ли блок
 collidesBlockUp::Coord -> Board-> Bool
-collidesBlockUp (a,b,z) []  =  b < 0
-collidesBlockUp (a,b,z) ((brda,brdb,z1):[])  =   (b < 0 && (b==brdb))
-collidesBlockUp (a,b,z) ((brda,brdb,z1):brds)  | b < 0 && (b==brdb)  = True
+collidesBlockUp (_,b,_) []  =  b < 0
+collidesBlockUp (_,b,_) ((_,brdb,_):[])  =   (b < 0 && (b==brdb))
+collidesBlockUp (a,b,z) ((_,brdb,_):brds)  | b < 0 && (b==brdb)  = True
                                           |  otherwise = collidesBlockUp (a,b,z) brds
 
 -- | Пересекает ли фигура доску или границы
@@ -250,19 +263,20 @@ collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlo
 
 -- | Проверка: закончилась ли игра
 isGameOver::Gamestate -> Bool
-isGameOver (a,(f1:f2:rest),d,e) = collidesFigureDown (figureToDraw f2) a
+isGameOver (a,(_:f2:_),_,_) = collidesFigureDown (figureToDraw f2) a
+isGameOver _ = True
 
 -- | Сортируем строки
 sortRows :: Board -> Board
 sortRows []     = []
-sortRows ((brda,brdb,z):brds) = sortRows (filter (\(x,y,z) -> y > brdb) brds) ++ [(brda,brdb,z)] ++ sortRows (filter (\(x,y,z) -> y <= brdb) brds)
+sortRows ((brda,brdb,z):brds) = sortRows (filter (\(_,y,_) -> y > brdb) brds) ++ [(brda,brdb,z)] ++ sortRows (filter (\(_,y,_) -> y <= brdb) brds)
 
 -- | Удалям заполненные строки
 deleteRows :: Board -> Board
 deleteRows [] = []
-deleteRows ((brda,brdb,z):brds) | (length (filter (\(x,y,z) -> brdb == y) ((brda,brdb,z):brds)) == 10)  =  (deleteRows (map (\(x,y,z) -> (x, y + blockSize,z)) (filter (\(x,y,z) -> y < brdb) l)) ++ (filter (\(x,y,z) -> y > brdb) l))
-                              | otherwise = (filter (\(x,y,z) -> brdb == y) ((brda,brdb,z):brds)) ++ (deleteRows  (filter (\(x,y,z) -> brdb /= y) ((brda,brdb,z):brds)))                  -----   ToDo:   Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
-                         where l = (filter (\(x,y,z) -> brdb /= y) ((brda,brdb,z):brds))
+deleteRows ((brda,brdb,z):brds) | (length (filter (\(_,y,_) -> brdb == y) ((brda,brdb,z):brds)) == 10)  =  (deleteRows (map (\(x,y,buf) -> (x, y + blockSize,buf)) (filter (\(_,y,_) -> y < brdb) l)) ++ (filter (\(_,y,_) -> y > brdb) l))
+                              | otherwise = (filter (\(_,y,_) -> brdb == y) ((brda,brdb,z):brds)) ++ (deleteRows  (filter (\(_,y,_) -> brdb /= y) ((brda,brdb,z):brds)))                  -----   ToDo:   Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
+                         where l = (filter (\(_,y,_) -> brdb /= y) ((brda,brdb,z):brds))
 
 -- | При нажатии клавиши "вниз" роняет фигуру 
 dropit::Gamestate -> Int -> Gamestate
@@ -270,6 +284,7 @@ dropit (a,((Figure sha dir (b,c,z)):rest),d,e) pts  | collide = (a,((Figure sha 
                                                   | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e) pts                                        
                                           where                                           
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
+dropit gs _ = gs
 
 -- | Рисуем доску
 drawBoard::Board  -> Picture
@@ -345,6 +360,7 @@ drawBlock  (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
 -- | Рисуем фигуру 
 drawFigure::Gamestate  ->  Picture
 drawFigure (_,(f:_),_,_) = drawBlockedFigure  (figureToDraw f)
+drawFigure _ = blank
 
 -- | Рисуем блоки фигуры
 drawBlockedFigure::BlockedFigure -> Picture
@@ -394,7 +410,8 @@ vectolist (a,b,c,d) = [a,b,c,d]
 
 -- | Добавляет в доску упавшую фигуру
 updateBoard::Gamestate ->Board
-updateBoard (a,(fig:rest),(_, _),_) = a ++ vectolist (figureToDraw fig)
+updateBoard (a,(fig:_),(_, _),_) = a ++ vectolist (figureToDraw fig)
+updateBoard _ = []
 
 -- | На основании прошедшего времени меняет скорость полета фигур
 updateSpeed::Time -> Speed -> Speed
@@ -406,7 +423,7 @@ updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genE
                                                               | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) dt sp)
                                                                  where
                                                                    gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
-
+updateTetris _ gs = gs
 -- ===========================================
 -- * AI
 -- | Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса
@@ -487,6 +504,7 @@ bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) =
    bestVariant (sortVariants [ genVariant gs dx r | dx <- [-5..4], r <- [0..3] ])
       where
         gs = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
+bestStep _ = (0,0,0)
 
 -- | Применяет функцию f n раз к сущности а
 apply :: (a -> a) -> Int -> a -> a
@@ -495,10 +513,10 @@ apply f num par = apply f  (num - 1) (f par)
 
 -- | Генерирует вариант развития событий
 genVariant:: Gamestate -> Int -> Int -> Variant
-genVariant gs dx r = (boardProfit (updateBoard (dropit (move (rotate gs)) (screenHeight-f2))), dx, r)
+genVariant gs dx r = (boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight-f2))), dx, r)
   where
     (_, Figure _ _ (_, f2, _) : _, _, _) = gs
-    rotate = apply turn r
+    rot = apply turn r
     move
       | dx > 0    = apply moveRight dx
       | otherwise = apply moveLeft (abs dx)
@@ -514,7 +532,7 @@ makeStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
       needturn = (\(_,_,t) -> t) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
       needleft = (\(_,y,_) -> y) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) < 0
       needright = (\(_,y,_) -> y) (bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)) > 0
-
+makeStep gs = gs
 
 -- ===========================================
 -- * Timing
@@ -531,6 +549,7 @@ newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
                                           new = ti + dt >= tact
                                           collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
                                           paused = sp < 0
+newTact gs _ _ = gs
 
 -- | Увеличивает скорость падения фигур, в зависимости от количества набранных очков
 newLevel::Gamestate -> Gamestate
@@ -548,6 +567,7 @@ newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
           l3 = s >= 2000 && s <= 3000
           l2 = s >= 1500 && s <= 2000
           l1 = s >= 1000 && s <= 1500
+newLevel gs = gs
 
 -- | Аргумент функции play, которая говорит, что делает каждая клавиша
 handleTetris :: Event -> Gamestate -> Gamestate
