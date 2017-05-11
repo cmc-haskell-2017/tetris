@@ -533,58 +533,37 @@ numberDeletes b = (boardHeight (deleteRows (sortRows b))) - (boardHeight b)
 boardProfit :: Board -> Int
 boardProfit b = 2000 + 10000 * (numberDeletes b) - 100 * (numberHoles b) - 10 * ((avgBoardHeight b) - (boardHeight b))
 
+--Сортируем варианты по профиту, количеству поворотова, смещению
+sortVariants :: [Variant] -> [Variant]
+sortVariants []     = []
+sortVariants (brd:brds) = sortVariants (filter (\x -> better x brd ) brds) ++ [brd] ++ sortVariants (filter (\x -> not (better x brd)) brds)
+
+better :: Variant -> Variant -> Bool
+better (profit1, dx1, r1) (profit2, dx2, r2) | profit1 > profit2 = True
+                                             | (profit1 == profit2) && (r1 < r2) = True
+                                             | (profit1 == profit2) && (r1 == r2) && ((abs dx1) < (abs dx2)) = True
+                                             | otherwise = False
 
 -- Анализирует Gamestate. Возвращает (Int, Int, Int) (профит, смещение от центра, количество поворотов). Отрицательное смещение - двигаемся влево. Иначе - вправо.
 bestStep :: Gamestate -> Variant
 bestStep (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) =
-   bestVariant ((boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 0) :
-    (boardProfit (updateBoard (dropit (moveLeft gs) (screenHeight-f2))) , -1, 0) :
-    (boardProfit (updateBoard (dropit (moveRight gs) (screenHeight-f2))), 1, 0) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft gs)) (screenHeight-f2))), -2, 0) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight gs)) (screenHeight-f2))), 2, 0) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft gs))) (screenHeight-f2))), -3, 0) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight gs))) (screenHeight-f2))), 3, 0) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft gs)))) (screenHeight-f2))), -4, 0) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight gs)))) (screenHeight-f2))), 4, 0) : 
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft gs))))) (screenHeight-f2))), -5, 0) :
-
-    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 1) :
-    (boardProfit (updateBoard (dropit (moveLeft (turn gs)) (screenHeight-f2))) , -1, 1) :
-    (boardProfit (updateBoard (dropit (moveRight (turn gs)) (screenHeight-f2))), 1, 1) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn gs))) (screenHeight-f2))), -2, 1) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn gs))) (screenHeight-f2))), 2, 1) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn gs)))) (screenHeight-f2))), -3, 1) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn gs)))) (screenHeight-f2))), 3, 1) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn gs))))) (screenHeight-f2))), -4, 1) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn gs))))) (screenHeight-f2))), 4, 1) : 
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn gs)))))) (screenHeight-f2))), -5, 1) :
-
-    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 2) :
-    (boardProfit (updateBoard (dropit (moveLeft (turn (turn gs))) (screenHeight-f2))) , -1, 2) :
-    (boardProfit (updateBoard (dropit (moveRight (turn (turn gs))) (screenHeight-f2))), 1, 2) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn (turn gs)))) (screenHeight-f2))), -2, 2) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn (turn gs)))) (screenHeight-f2))), 2, 2) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn gs))))) (screenHeight-f2))), -3, 2) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn gs))))) (screenHeight-f2))), 3, 2) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs)))))) (screenHeight-f2))), -4, 2) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn gs)))))) (screenHeight-f2))), 4, 2) : 
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn gs))))))) (screenHeight-f2))), -5, 2) :
-
-    (boardProfit (updateBoard (dropit gs (screenHeight-f2))), 0, 3) :
-    (boardProfit (updateBoard (dropit (moveLeft (turn (turn (turn gs)))) (screenHeight-f2))) , -1, 3) :
-    (boardProfit (updateBoard (dropit (moveRight (turn (turn (turn gs)))) (screenHeight-f2))), 1, 3) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (turn (turn (turn gs))))) (screenHeight-f2))), -2, 3) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (turn (turn (turn gs))))) (screenHeight-f2))), 2, 3) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))) (screenHeight-f2))), -3, 3) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (turn (turn (turn gs)))))) (screenHeight-f2))), 3, 3) :
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs))))))) (screenHeight-f2))), -4, 3) :
-    (boardProfit (updateBoard (dropit (moveRight (moveRight (moveRight (moveRight (turn (turn (turn gs))))))) (screenHeight-f2))), 4, 3) : 
-    (boardProfit (updateBoard (dropit (moveLeft (moveLeft (moveLeft (moveLeft (moveLeft (turn (turn (turn gs)))))))) (screenHeight-f2))), -5, 3) :
-
-    [])
+   bestVariant (sortVariants [ f gs dx r | dx <- [-5..4], r <- [0..3] ])
       where
-        gs = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) 
+        gs = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
 
+apply :: (a -> a) -> Int -> a -> a
+apply f 0 par = par
+apply f num par = apply f  (num - 1) (f par)
+
+
+f:: Gamestate -> Int -> Int -> Variant
+f gs dx r = (boardProfit (updateBoard (dropit (move (rotate gs)) (screenHeight-f2))), dx, r)
+  where
+    (_, Figure _ _ (_, f2, _) : _, _, _) = gs
+    rotate = apply turn r
+    move
+      | dx > 0    = apply moveRight dx
+      | otherwise = apply moveLeft (abs dx)
 
 --в newTact вызывается makeStep 4 раза. Т.е ИИ делает 4 хода в такт. 
 makeStep:: Gamestate -> Gamestate 
