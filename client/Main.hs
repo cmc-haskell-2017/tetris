@@ -17,17 +17,21 @@ import System.Exit (exitSuccess)
 import Tetris
 
 data MP_Gamestate = MP_Gamestate 
-  { state      :: TVar Gamestate
-  , connection :: Connection
+  {
+    opponentState :: TVar Gamestate
+  , myState       :: TVar Gamestate
+  , connection    :: Connection
   }
 
 
 handleUpdatesMP :: MP_Gamestate -> IO ()
 handleUpdatesMP MP_Gamestate{..} = forever $ do
   -- putStrLn "here!"
-  gs <- receiveData connection
+  myGS <- receiveData connection
+  opGS <- receiveData connection
   -- putStrLn "there!"
-  atomically $ writeTVar state (fromWebGS gs)
+  atomically $ writeTVar myState (fromWebGS myGS)
+  atomically $ writeTVar opponentState (fromWebGS opGS)
 
 
 handleTetrisMP :: Event -> MP_Gamestate -> IO MP_Gamestate
@@ -49,8 +53,10 @@ sendIvent txt gs@MP_Gamestate{..}  = do
 
 renderTetris :: MP_Gamestate -> IO Picture
 renderTetris MP_Gamestate{..} = do
- gs <- readTVarIO state
- io <- return (drawTetris gs)
+ gs1 <- readTVarIO myState
+ gs2 <- readTVarIO opponentState
+ io <- return (drawTetris gs1)
+ io2 <- return (drawTetris gs2)
  return io
 
 
@@ -66,9 +72,10 @@ main = do
  g <- newStdGen
  state <- atomically $ newTVar (genUniverse g)
  runClient "localhost" 8000 "/connect" $ \conn -> do
-    let gs = MP_Gamestate state conn
+    let gs = MP_Gamestate state state conn
     _ <- forkIO (handleUpdatesMP gs)
     playIO display bgColor fps gs renderTetris handleTetrisMP updateTetrisMP
+    return ()
   where
     display  = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor  = black      -- цвет фона

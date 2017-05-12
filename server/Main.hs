@@ -84,8 +84,13 @@ server config@Config{..} = websocketsOr defaultConnectionOptions wsApp backupApp
       name <- addClient conn config
       putStrLn $ show name
 
-      if t < 2 then
-        handleActions name conn config
+      if t < 2 then 
+        do
+          if t < 1 then 
+            atomically $ do writeTVar configState Waiting
+          else 
+            atomically $ do writeTVar configState Active
+          handleActions name conn config
       else
         putStrLn "too many players!"
 
@@ -161,14 +166,16 @@ periodicUpdates ms cfg@Config{..} = forever $ do
   threadDelay ms -- wait ms milliseconds
   stateIO <- readTVarIO configState
   disconnectState stateIO
-  universe <- atomically $ do
-    -- state <- readTVar configState
-    res <- ((map (updateT secs)) . Map.toList) <$> readTVar configUniverse
-    writeTVar configUniverse $ Map.fromList res
-    return (Map.fromList res)
-  return ()
-  -- putStrLn "here!"
-  broadcastUpdate universe cfg
+  if stateIO == Waiting then return ()
+    else do 
+      universe <- atomically $ do
+        -- state <- readTVar configState
+        res <- ((map (updateT secs)) . Map.toList) <$> readTVar configUniverse
+        writeTVar configUniverse $ Map.fromList res
+        return (Map.fromList res)
+      -- return ()
+      -- putStrLn "here!"
+      broadcastUpdate universe cfg
   where
     secs = fromIntegral ms / 1000000
 
@@ -191,8 +198,12 @@ broadcastUpdate un cfg@Config{..} = do
   txt <- do return (Text.singleton 'f')
   mapM_ (forkIO . sendUpdate) (Map.toList clients)
   where
-    sendUpdate (name, conn) = sendBinaryData conn (toWeb (un Map.! name)) `catch` handleClosedConnection name
+    sendUpdate (name, conn) = mapM_ (sendData cfg conn name . toWeb) (Map.elems un)
 
+
+sendData :: Config -> Client -> PlayerName -> WebGS -> IO ()
+sendData cfg@Config{..} conn name gs = sendBinaryData conn gs `catch` handleClosedConnection name
+  where
     handleClosedConnection :: PlayerName -> ConnectionException -> IO ()
     handleClosedConnection name _ = do
       putStrLn (name ++ " disconnected.")
