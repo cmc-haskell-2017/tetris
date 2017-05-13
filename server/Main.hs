@@ -207,12 +207,8 @@ broadcastUpdate un cfg@Config{..} = do
             fst <- return (un Map.! name) 
             snd <- return (head $ Map.elems (Map.delete name un)) 
 
-            if fst == snd then putStrLn "FUCK!!!"
-            else putStrLn "OK"
-
-            -- putStrLn $ show fst ++ "fst"
-            -- putStrLn $ show snd ++ "snd"
-            -- putStrLn "-------------------------------"
+            -- if fst == snd then putStrLn "BAD!!!"
+            -- else putStrLn "OK"
 
             (sendData cfg conn name) $ GSPair (toWeb fst) (toWeb snd)
             return ()

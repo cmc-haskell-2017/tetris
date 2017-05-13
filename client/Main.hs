@@ -31,13 +31,9 @@ handleUpdatesMP MP_Gamestate{..} = forever $ do
   myGS <- return (getFst pair)
   opGS <- return (getSnd pair)
 
-  if (fromWebGS myGS) == (fromWebGS opGS) then putStrLn "FFF"
-  else putStrLn "OOOO"
-
-  -- putStrLn "there!"
-  atomically $ do
-     writeTVar myState (fromWebGS myGS)
+  _ <- atomically $ do
      writeTVar opponentState (fromWebGS opGS)
+     writeTVar myState       (fromWebGS myGS)
 
 
 getFst :: GSPair -> WebGS
@@ -65,14 +61,9 @@ sendIvent txt gs@MP_Gamestate{..}  = do
 
 renderTetris :: MP_Gamestate -> IO Picture
 renderTetris MP_Gamestate{..} = do
+
  gs1 <- readTVarIO myState
  gs2 <- readTVarIO opponentState
-
- if gs1 == gs2 then putStrLn "fuck"
- else putStrLn "OK"
-
- -- putStrLn $ show gs1 ++ " ---------------------------- "
- -- putStrLn $ show gs2 ++ " +++++++++++++++++++++++++++"
 
  io1  <- return (drawTetris (div screenWidth 2) gs1)
  io2  <- return (drawTetris ( - div screenWidth 2) gs2)
@@ -83,16 +74,16 @@ renderTetris MP_Gamestate{..} = do
 -- does nothing
 updateTetrisMP :: Float -> MP_Gamestate -> IO MP_Gamestate
 updateTetrisMP dt gs = do
-  -- sendIvent (Text.singleton 'd') gs
   return gs
 
 
 main :: IO ()
 main = do
  g <- newStdGen
- state <- atomically $ newTVar (genEmptyUniverse g)
+ state1 <- atomically $ newTVar (genEmptyUniverse g)
+ state2 <- atomically $ newTVar (genEmptyUniverse g)
  runClient "localhost" 8000 "/connect" $ \conn -> do
-    let gs = MP_Gamestate state state conn
+    let gs = MP_Gamestate state1 state2 conn
     _ <- forkIO (handleUpdatesMP gs)
     playIO display bgColor fps gs renderTetris handleTetrisMP updateTetrisMP
     return ()
