@@ -295,32 +295,93 @@ startGame  _ =  0
 
 
 
-moveLeft::Gamestate -> GameState
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k) |collidewall =(toGS (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
-        | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
-        |otherwise = (toGS(a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
-  where 
-    collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
-    collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k) |collidewall = (toGS(a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
-     | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
-        |otherwise =(toGS (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
-  where 
-    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
-    collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
-moveRight::Gamestate -> GameState
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisStepped,k) | collidewall  =(toGS (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
-         | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
-        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
-  where 
-    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
-    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a    
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisSmooth,k)| collidewall  = (toGS(a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
-       | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
-        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
-  where 
-    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
-    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a
+moveLeft::GameState -> GameState
+moveLeft u |(typemoving u)==TetrisStepped = moveLeftStepped u 
+            |otherwise = moveLeftSmooth u
+moveLeftStepped ::GameState -> GameState
+moveLeftStepped u   | collidewall = u{   figure =cons (mul8 (getf(figure u))) (rest  (figure u))}
+                    | collide = u
+                    |otherwise = u{ figure = cons  (minbl (getf(figure u))) (rest  (figure u))}
+
+                    where 
+    collide = collidesFigureSides (figureToDraw (minbl (getf(figure u)))) (board u)
+    collidewall = collidesFigureSidesWallLeft (figureToDraw (minbl (getf(figure u)))) (board u)
+mul8::Figure->Figure
+mul8  (Figure s t (b,c,z ))   = (Figure s t (8*blockSize,c,z ))              
+minbl::Figure->Figure
+minbl  (Figure s t (b,c,z ))   = (Figure s t (b - blockSize,c,z ))  
+rest ::[Figure]->[Figure]
+rest (f:fs) = fs
+cons ::Figure->[Figure]->[Figure]
+cons  a f = a:f
+
+moveLeftSmooth ::GameState -> GameState
+moveLeftSmooth u   | collidewall = u{   figure =cons (mul8 (getf(figure u))) (rest  (figure u))}
+                    | collide = u
+                    |otherwise = u{ figure = cons  (minbl (getf(figure u))) (rest  (figure u))}
+
+                    where 
+    collide = collidesFigureSidesSmooth (figureToDraw (minbl (getf(figure u)))) (board u)
+    collidewall = collidesFigureSidesWallLeft (figureToDraw (minbl (getf(figure u)))) (board u)      
+
+--moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k) |collidewall =(toGS (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
+  --      | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
+    --    |otherwise = (toGS(a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
+--  where 
+  --  collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
+    --collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
+--moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k) |collidewall = (toGS(a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
+  --   | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
+    --    |otherwise =(toGS (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
+ -- where 
+   -- collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
+   -- collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
+
+
+moveRight::GameState -> GameState
+moveRight u |(typemoving u)==TetrisStepped = moveRightStepped u 
+            |otherwise = moveRightSmooth u
+moveRightStepped ::GameState -> GameState
+moveRightStepped u   | collidewall = u{   figure =cons (bl (getf(figure u))) (rest  (figure u))}
+                    | collide = u
+                    |otherwise = u{ figure = cons  (plbl (getf(figure u))) (rest  (figure u))}
+
+                    where 
+    collide = collidesFigureSides (figureToDraw (plbl (getf(figure u)))) (board u)
+    collidewall = collidesFigureSidesWallRight (figureToDraw (plbl (getf(figure u)))) (board u)
+bl::Figure->Figure
+bl  (Figure s t (b,c,z ))   = (Figure s t (blockSize,c,z ))              
+plbl::Figure->Figure
+plbl  (Figure s t (b,c,z ))   = (Figure s t (b + blockSize,c,z ))  
+
+
+moveRightSmooth ::GameState -> GameState
+moveRightSmooth u   | collidewall = u{   figure =cons (bl (getf(figure u))) (rest  (figure u))}
+                    | collide = u
+                    |otherwise = u{ figure = cons  (plbl (getf(figure u))) (rest  (figure u))}
+
+                    where 
+    collide = collidesFigureSidesSmooth (figureToDraw (plbl (getf(figure u)))) (board u)
+    collidewall = collidesFigureSidesWallRight (figureToDraw (plbl (getf(figure u)))) (board u)   
+
+
+
+
+
+
+--moveRight::Gamestate -> GameState
+--moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisStepped,k) | collidewall  =(toGS (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
+--         | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
+--        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
+--  where 
+--    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
+--    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a    
+--moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisSmooth,k)| collidewall  = (toGS(a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
+--       | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
+--        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
+--  where 
+--    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
+--    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a
 collidesBlock::Coord -> Bool
 collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
@@ -711,14 +772,16 @@ drawBlock  (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 
-drawFigure::Gamestate  ->  Picture
-drawFigure (b,(f:fs),s,t,v,p,k) = drawBlockedFigure  (figureToDraw f)
+drawFigure::GameState  ->  Picture
+drawFigure u = drawBlockedFigure  (figureToDraw (getf (figure u) ))
 
 
 
-drawFigureCircle::Gamestate  ->  Picture
-drawFigureCircle (b,(f:fs),s,t,v,p,k) = drawBlockedFigureCircle  (figureToDraw f)
+drawFigureCircle::GameState  ->  Picture
+drawFigureCircle u = drawBlockedFigureCircle(figureToDraw (getf (figure u) ))
 
+getf ::[Figure]->Figure
+getf (f:fs) = f
 
 drawBlockedFigureCircle :: BlockedFigure -> Picture
 drawBlockedFigureCircle ((a, b, c, d)) =         pictures  [drawBlockCircle   a ,
@@ -791,7 +854,7 @@ fieldWidth = 150
 
 drawTetris ::GameState-> Picture
 drawTetris u | ((typerepres u)==TetrisRound) =  pictures
-  [ drawFigureCircle (fromGS u),
+  [ drawFigureCircle  u,
     drawBoardCircle (board u),
     drawScore (score u),
     drawCircleBackGr,
@@ -804,7 +867,7 @@ drawTetris u | ((typerepres u)==TetrisRound) =  pictures
   
   ] 
     |otherwise = pictures
-  [drawFigure (fromGS u),
+  [drawFigure  u,
    drawBoard (board u) ,
    drawScore (score u),
    drawRectangleMenu,
@@ -947,10 +1010,10 @@ newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
 
 handleTetris :: Event -> GameState -> GameState
 
-handleTetris (EventKey (Char 'l') Down _ _) u = moveRight (fromGS u)
+handleTetris (EventKey (Char 'l') Down _ _) u = moveRight u
 handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  u  = moveLeft (fromGS u)
+handleTetris (EventKey (Char 'j') Down _ _)  u  = moveLeft  u
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
 handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) u  = dropithelp (fromGS u)
