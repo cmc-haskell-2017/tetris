@@ -438,16 +438,35 @@ deleteRows ((brda,brdb,z):brds) | (length (filter (\(x,y,z) -> brdb == y) ((brda
 
 --При нажатии клавиши "вниз" роняет фигуру 
 
+dropit::GameState -> Int -> GameState
+dropit u ptr |(typemoving u)  == TetrisStepped = dropitStepped u ptr
+          |otherwise = dropitSmooth u ptr
+dropitStepped ::GameState -> Int -> GameState
+dropitStepped u pts | collide = u{score = ((score u) + (div pts blockSize))}   
+                    |otherwise = dropitStepped u{figure = cons  (plbly (getf(figure u)))   (rest  (figure u))} pts
+                    where                                           
+                                              collide = collidesFigureDown (figureToDraw (plbly (getf (figure u)))) (board u)
+plbly::Figure->Figure
+plbly  (Figure s t (b,c,z ))   = (Figure s t (b ,c + blockSize,z )) 
 
-dropit::Gamestate -> Int -> GameState
-dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisStepped,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisStepped,k))                   
-                                                  | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e,v,TetrisStepped,k) pts                                        
-                                          where                                           
-                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
-dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisSmooth,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisSmooth,k))                   
-                                                  | otherwise = dropit (a,((Figure sha dir (b,c + 1,z)):rest),d,e,v,TetrisSmooth,k) pts                                        
-                                          where                                           
-                                              collide = collidesFigureDownSmooth (figureToDraw (Figure sha dir (b,c + blockSize,z))) a                                              
+dropitSmooth ::GameState -> Int -> GameState
+dropitSmooth u pts | collide = u{score = (score u) + (div pts blockSize)}   
+                    |otherwise = dropitSmooth u{figure = cons  (ploy (getf (figure u)))   (rest  (figure u))} pts
+                    where                                           
+                                              collide = collidesFigureDownSmooth (figureToDraw (plbly (getf (figure u)))) (board u)
+ploy::Figure->Figure
+ploy  (Figure s t (b,c,z ))   = (Figure s t (b ,c + 1,z )) 
+
+
+
+--dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisStepped,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisStepped,k))                   
+--                                                  | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e,v,TetrisStepped,k) pts                                        
+--                                          where                                           
+--                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
+--dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisSmooth,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisSmooth,k))                   
+--                                                  | otherwise = dropit (a,((Figure sha dir (b,c + 1,z)):rest),d,e,v,TetrisSmooth,k) pts                                        
+--                                          where                                           
+--                                              collide = collidesFigureDownSmooth (figureToDraw (Figure sha dir (b,c + blockSize,z))) a                                              
 
 
 drawBoard::Board  -> Picture
@@ -987,7 +1006,7 @@ handleTetris (EventKey (Char 'l') Up _ _) t = t
 handleTetris (EventKey (Char 'j') Down _ _)  u  = moveLeft  u
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) u  = dropithelp (fromGS u)
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) u  = dropit u (screenHeight -  (getc (getf (figure u))))
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
 handleTetris (EventKey (Char 'k') Down _ _ ) u = turn (fromGS u)
@@ -1000,14 +1019,17 @@ handleTetris (EventKey (MouseButton LeftButton) Up _ mouse) u =  (mouseToCell mo
 handleTetris  _ t = t  
 
 
-dropithelp ::Gamestate -> GameState
-dropithelp (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) = dropit (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) (screenHeight-c)
+
 tetrispause :: Gamestate->GameState
 tetrispause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) =(toGS (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e,v,p,k))
 tetrTypbuttonx1 :: Float
 tetrTypbuttonx1 = 34
 tetrTypbuttonx2 :: Float
 tetrTypbuttonx2 = 100
+ 
+getc :: Figure-> Int
+getc  (Figure sha dir (b,c,cl)) = c
+
 
 tetrTypbuttony1 :: Float
 tetrTypbuttony1 = 250
