@@ -33,7 +33,11 @@ init_tact = 0.7
 type Board = [Coord]
 
 -- | Вариант развития событий для хода ИИ (профит, смещение, количество поворотов).
-type Variant = (Int, Int, Int)  -- FIXME : нужны синонимы типов и/или data с полями вместо кортежа
+data Variant = Variant 
+  { profit :: Int
+  , offset :: Int
+  , turns  :: Int
+  }
 
 -- | Счёт.
 type Score = Int
@@ -473,14 +477,14 @@ sortBoard (brd : brds) = sortBoard (filter (\x -> greater x brd ) brds)
 
 -- | Сравнивает, какой вариант лучше.
 best :: Variant -> Variant -> Variant
-best (x1, y1, t1) (x2, y2, t2) 
-  | x1 >= x2  = (x1, y1, t1)
-  | otherwise = (x2, y2, t2)
+best v1 v2
+  | profit v1 >= profit v2 = v1
+  | otherwise = v2
 
 -- | Выбирает наилучший вариант развития событий.
 bestVariant :: [Variant] -> Variant
-bestVariant []               = (0, -1, 0)
-bestVariant ((y, x, t) : hs) = best (y, x, t) (bestVariant hs)
+bestVariant []        = Variant {profit = 0, offset = -1, turns = 0}
+bestVariant (v1 : vs) = best v1 (bestVariant vs)
 
 -- | Высота доски. Имеется ввиду высочайшая точка доски.
 boardHeight :: Board -> Int
@@ -520,14 +524,22 @@ numberDeletes b = (boardHeight (deleteRows (sortRows b))) - (boardHeight b)
 -- | Сортируем варианты по профиту, количеству поворотова, смещению.
 sortVariants :: [Variant] -> [Variant]
 sortVariants []     = []
-sortVariants (brd : brds) = sortVariants (filter (\x -> better x brd ) brds) ++ [brd] ++ sortVariants (filter (\x -> not (better x brd)) brds)
+sortVariants (v : vs)     = sortVariants (filter (\x -> better x v) vs) ++ [v] ++ sortVariants (filter (\x -> not (better x v)) vs)
 
 -- | Функция сравнения двух вариантов.
 better :: Variant -> Variant -> Bool
-better (profit1, dx1, r1) (profit2, dx2, r2) | profit1 > profit2 = True
-                                             | (profit1 == profit2) && (r1 < r2) = True
-                                             | (profit1 == profit2) && (r1 == r2) && ((abs dx1) < (abs dx2)) = True
-                                             | otherwise = False
+better v1 v2 
+  | p1 > p2 = True
+  | (p1 == p2) && (r1 < r2) = True
+  | (p1 == p2) && (r1 == r2) && ((abs dx1) < (abs dx2)) = True
+  | otherwise = False
+  where
+    p1 = profit v1
+    p2 = profit v2
+    dx1 = offset v1 
+    dx2 = offset v2
+    r1 = turns v1
+    r2 = turns v2
 
 -- | Анализирует 'Gamestate'.
 -- Возвращает 'Variant' (профит, смещение от центра, количество поворотов).
@@ -537,7 +549,7 @@ bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) =
    bestVariant (sortVariants [ genVariant gs dx r | dx <- [-5..4], r <- [0..3] ])
       where
         gs = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-bestStep _ = (0, 0, 0)
+bestStep _ = Variant {profit = 0, offset = 0, turns = 0}
 
 -- | Применяет функцию 'f' 'n' раз к сущности 'а'.
 apply :: (a -> a) -> Int -> a -> a
@@ -546,7 +558,11 @@ apply f num par = apply f  (num - 1) (f par)
 
 -- | Генерирует вариант развития событий.
 genVariant :: Gamestate -> Int -> Int -> Variant
-genVariant gs dx r = (boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight - f2))), dx, r)
+genVariant gs dx r = Variant
+  { profit = boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight - f2)))
+  , offset = dx
+  , turns = r
+  } 
   where
     (_, Figure _ _ (_, f2, _) : _, _, _) = gs
     rot = apply turn r
@@ -562,9 +578,9 @@ makeStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
   | needright = moveRight (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
   | otherwise   = dropit (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) (screenHeight - f2)
     where
-      needturn = (\(_, _, t) -> t) (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
-      needleft = (\(_, y, _) -> y) (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) < 0
-      needright = (\(_, y, _) -> y) (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
+      needturn = turns (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
+      needleft = offset (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) < 0
+      needright = offset (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
 makeStep gs = gs
 
 -- ===========================================
