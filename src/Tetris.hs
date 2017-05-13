@@ -324,19 +324,6 @@ moveLeftSmooth u   | collidewall = u{   figure =cons (mul8 (getf(figure u))) (re
     collide = collidesFigureSidesSmooth (figureToDraw (minbl (getf(figure u)))) (board u)
     collidewall = collidesFigureSidesWallLeft (figureToDraw (minbl (getf(figure u)))) (board u)      
 
---moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k) |collidewall =(toGS (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
-  --      | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
-    --    |otherwise = (toGS(a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
---  where 
-  --  collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
-    --collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
---moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k) |collidewall = (toGS(a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
-  --   | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
-    --    |otherwise =(toGS (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
- -- where 
-   -- collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
-   -- collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
-
 
 moveRight::GameState -> GameState
 moveRight u |(typemoving u)==TetrisStepped = moveRightStepped u 
@@ -366,22 +353,6 @@ moveRightSmooth u   | collidewall = u{   figure =cons (bl (getf(figure u))) (res
 
 
 
-
-
-
---moveRight::Gamestate -> GameState
---moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisStepped,k) | collidewall  =(toGS (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
---         | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
---        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
---  where 
---    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
---    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a    
---moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisSmooth,k)| collidewall  = (toGS(a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
---       | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
---        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
---  where 
---    collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
---    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a
 collidesBlock::Coord -> Bool
 collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
