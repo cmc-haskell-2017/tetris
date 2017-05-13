@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE RecordWildCards #-}
 module Tetris where
 
 import System.Random
@@ -59,16 +61,44 @@ type Coord = (Int, Int,Int)
 type Time = Float
 
 
-type TetrisType = Int
-
+--type TetrisType = Int
+data TetrisType = TetrisRect | TetrisRound
+    deriving(Eq, Show)
+data TetrisMove = TetrisStepped | TetrisSmooth
+   deriving(Eq, Show)
 --Состояние игры в текущий момент(разделили доску и фигуру,
 --чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
 --оптимизировано)
 --[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 -- доска фигуры скорость время счет круговой(1) или прямоугольный(0) плавный(1) или чтупенчатый(0) init_tack
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  [Figure], (Speed, Time), Score,TetrisType,TetrisType,Time)
+type Gamestate = (Board,  [Figure], (Speed, Time), Score,TetrisType,TetrisMove,Time)
 
+
+data GameState = GameState
+ {  board   :: Board
+  , figure :: [Figure]
+  , speedandtime   :: (Speed, Time)
+  , score   :: Score
+  ,typerepres::TetrisType
+  ,typemoving :: TetrisMove
+  ,tactgamestate :: Time
+  } 
+
+--instance Show GameState where
+  --show GameState{..} = 
+    --show board ++ " " ++
+    --show (head figure) ++ " " ++ 
+    --show speed ++ " " ++
+    --show time ++ " " ++
+    --show score ++ "end "
+
+fromGS :: GameState -> Gamestate
+fromGS GameState{..} = (board, figure, speedandtime, score, typerepres,typemoving,tactgamestate)
+
+
+toGS :: Gamestate -> GameState
+toGS (board, figure, (speed, time), score, typerepres,typemoving,tactgamestate) = GameState board figure (speed, time) score  typerepres typemoving tactgamestate
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 --Скорость
@@ -141,8 +171,15 @@ genRow 0 = []
 genRow w = (genRow (w-1)) ++ [Free]
 
 
-genUniverse::StdGen -> Gamestate
-genUniverse g = (genEmptyBoard,initFigures g,(init_tact, 0),0,0,0,0.7)
+genUniverse::StdGen -> GameState
+genUniverse g = GameState{ board   = genEmptyBoard  
+                          , figure  = initFigures g
+                          , speedandtime   = (init_tact, 0)
+                          , score    = 0
+                          ,typerepres =    TetrisRect
+                          ,typemoving =  TetrisStepped
+                          ,tactgamestate     = 0.7
+                          }
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
@@ -165,41 +202,41 @@ generateRandomFigureList _ =  [Figure O DUp (0,0,0)]
 type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 
-turn::Gamestate -> Gamestate
-turn (a,(Figure t DUp c):rest,d,e,v,p,k) | collide1 = (a,(Figure t DUp c):rest,d,e,v,p,k)
-                                   | otherwise = (a,(Figure t DRight c):rest,d,e,v,p,k)
+turn::Gamestate -> GameState
+turn (a,(Figure t DUp c):rest,d,e,v,p,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
+                                   | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
                             where 
                                 collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
-turn (a,(Figure t DRight c):rest,d,e,v,p,k) | collide2 = (a,(Figure t DRight c):rest,d,e,v,p,k)
-                                      | otherwise = (a,(Figure t DDown c):rest,d,e,v,p,k)
+turn (a,(Figure t DRight c):rest,d,e,v,p,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
+                                      | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
                             where 
                                 collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
-turn (a,(Figure t DDown c):rest,d,e,v,p,k) | collide3 = (a,(Figure t DDown c):rest,d,e,v,p,k)
-                                     | otherwise = (a,(Figure t DLeft c):rest,d,e,v,p,k)
+turn (a,(Figure t DDown c):rest,d,e,v,p,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
+                                     | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
                             where 
                                 collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
-turn (a,(Figure t DLeft c):rest,d,e,v,p,k) | collide4 = (a,(Figure t DLeft c):rest,d,e,v,p,k)
-                                     | otherwise = (a,(Figure t DUp c):rest,d,e,v,p,k)
+turn (a,(Figure t DLeft c):rest,d,e,v,p,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
+                                     | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
                             where 
                                 collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
 
 
 
 
-turn (a,(Figure t DUp c):rest,d,e,v,1,k) | collide1 = (a,(Figure t DUp c):rest,d,e,v,1,k)
-                                   | otherwise = (a,(Figure t DRight c):rest,d,e,v,1,k)
+turn (a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
+                                   | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
                             where 
                                 collide1 = collidesFigureSmooth (figureToDraw (Figure t DRight c)) a
-turn (a,(Figure t DRight c):rest,d,e,v,1,k) | collide2 = (a,(Figure t DRight c):rest,d,e,v,1,k)
-                                      | otherwise = (a,(Figure t DDown c):rest,d,e,v,1,k)
+turn (a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
+                                      | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
                             where 
                                 collide2 = collidesFigureSmooth (figureToDraw (Figure t DDown c)) a
-turn (a,(Figure t DDown c):rest,d,e,v,1,k) | collide3 = (a,(Figure t DDown c):rest,d,e,v,1,k)
-                                     | otherwise = (a,(Figure t DLeft c):rest,d,e,v,1,k)
+turn (a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
+                                     | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
                             where 
                                 collide3 = collidesFigureSmooth (figureToDraw (Figure t DLeft c)) a
-turn (a,(Figure t DLeft c):rest,d,e,v,1,k) | collide4 = (a,(Figure t DLeft c):rest,d,e,v,1,k)
-                                     | otherwise = (a,(Figure t DUp c):rest,d,e,v,1,k)
+turn (a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
+                                     | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
                             where 
                                 collide4 = collidesFigureSmooth (figureToDraw (Figure t DUp c)) a
 
@@ -258,29 +295,29 @@ startGame  _ =  0
 
 
 
-moveLeft::Gamestate -> Gamestate
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,0,k) |collidewall = (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,0,k)
-        | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
-        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,0,k)
+moveLeft::Gamestate -> GameState
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k) |collidewall =(toGS (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
+        | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
+        |otherwise = (toGS(a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
     collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,1,k) |collidewall = (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,1,k)
-     | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
-        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,1,k)
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k) |collidewall = (toGS(a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
+     | collide =(toGS (a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
+        |otherwise =(toGS (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
   where 
     collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
     collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
-moveRight::Gamestate -> Gamestate
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,0,k) | collidewall  = (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,0,k)
-         | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
-        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,0,k)
+moveRight::Gamestate -> GameState
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisStepped,k) | collidewall  =(toGS (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisStepped,k))
+         | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisStepped,k))
+        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisStepped,k))
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
     collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a    
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,1,k)| collidewall  = (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,1,k)
-       | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
-        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,1,k)
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,TetrisSmooth,k)| collidewall  = (toGS(a, ((Figure s t (blockSize,c,z )):rest),d,e,v,TetrisSmooth,k))
+       | collide = (toGS(a, ((Figure s t (b,c,z)):rest),d,e,v,TetrisSmooth,k))
+        |otherwise = (toGS(a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,TetrisSmooth,k))
   where 
     collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
     collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a
@@ -350,8 +387,8 @@ collidesFigureDownSmooth::BlockedFigure -> Board -> Bool
 collidesFigureDownSmooth (a,b,c,d) board | (collidesBlockDownSmooth a board) || (collidesBlockDownSmooth b board) || (collidesBlockDownSmooth c board) || (collidesBlockDownSmooth d board) = True
         |otherwise = False
 isGameOver::Gamestate -> Bool
-isGameOver (a,(f1:f2:rest),d,e,v,0,k) = collidesFigureDown (figureToDraw f2) a
-isGameOver (a,(f1:f2:rest),d,e,v,1,k) = collidesFigureDownSmooth (figureToDraw f1) a
+isGameOver (a,(f1:f2:rest),d,e,v,TetrisStepped,k) = collidesFigureDown (figureToDraw f2) a
+isGameOver (a,(f1:f2:rest),d,e,v,TetrisSmooth,k) = collidesFigureDownSmooth (figureToDraw f1) a
 
 
 
@@ -370,13 +407,13 @@ deleteRows ((brda,brdb,z):brds) | (length (filter (\(x,y,z) -> brdb == y) ((brda
 --При нажатии клавиши "вниз" роняет фигуру 
 
 
-dropit::Gamestate -> Int -> Gamestate
-dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,0,k) pts  | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,0,k)                   
-                                                  | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e,v,0,k) pts                                        
+dropit::Gamestate -> Int -> GameState
+dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisStepped,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisStepped,k))                   
+                                                  | otherwise = dropit (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e,v,TetrisStepped,k) pts                                        
                                           where                                           
                                               collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
-dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,1,k) pts  | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,1,k)                   
-                                                  | otherwise = dropit (a,((Figure sha dir (b,c + 1,z)):rest),d,e,v,1,k) pts                                        
+dropit (a,((Figure sha dir (b,c,z)):rest),d,e,v,TetrisSmooth,k) pts  | collide = (toGS(a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize),v,TetrisSmooth,k))                   
+                                                  | otherwise = dropit (a,((Figure sha dir (b,c + 1,z)):rest),d,e,v,TetrisSmooth,k) pts                                        
                                           where                                           
                                               collide = collidesFigureDownSmooth (figureToDraw (Figure sha dir (b,c + blockSize,z))) a                                              
 
@@ -386,194 +423,222 @@ drawBoard s = pictures (map drawBlock s)
 drawBoardCircle :: Board -> Picture
 drawBoardCircle s = pictures (map drawBlockCircle s)
 --(b==(324)||b==323||b == 322||b == 325||b == 326||b==321||b == 327||b==288||b==0  )
+
+angle :: Float
+angle = 36
+
+blockSizeFloat :: Float
+blockSizeFloat = 30
+
+specangel :: Float
+specangel = 324
+
+
+offset2 :: Float
+offset2 = 100
+
+myscale :: Float
+myscale = 2.3
+
+sizefit ::Float
+sizefit = 5
+
+sizefitInt ::Int
+sizefitInt = 5
+
+offsedge ::Int
+offsedge = 15
+
+
+
 drawBlockCircle :: Coord-> Picture
-drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color blue  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [
+  color blue  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt) /sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt - offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color blue   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color blue   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color blue   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [ 
+  color blue   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +35) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color yellow  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [
+  color yellow  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt -offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + sizefitInt ) /sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color yellow   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color yellow   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color yellow   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [ 
+  color yellow   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) /sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +angle - 1) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color red  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [ 
+  color red  (thickArc (fromIntegral (0  )) ((angle  )) (fromIntegral (c + sizefitInt) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt - offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + sizefitInt ) /sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color red   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color red   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color red   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [ 
+  color red   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) /sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +angle - 1) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color green  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [ 
+  color green  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt - offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) /sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color green   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color green   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color green   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [
+  color green   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) /sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +35) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color orange  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [
+  color orange  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt - offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color orange   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color orange   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c +sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) /sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color orange   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [
+  color orange   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +angle - 1) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) /sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
- [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color white  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
+drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - offset2) (scale  myscale myscale (pictures
+ [
+  color white  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt) /sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt - offsedge) / sizefit -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) ( (1  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc ( (angle - 1  )) ( (angle  )) (fromIntegral (c + sizefitInt ) / sizefit -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
-    (rotate (-324) (color white   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
-   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
+    (rotate (-specangel) (color white   (thickArc (0) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) (fromIntegral (c + sizefitInt-offsedge) /sizefit -2 ) (fromIntegral 1) )) ),
+   (rotate (-specangel) (color magenta   (thickArc (0) (1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
-                   |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
- [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color white   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
+                   |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
+ [ 
+  color white   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
 
-   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +angle - 1) (((fromIntegral b)/blockSizeFloat)*angle + angle) (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
    ]))
     ]
   where
@@ -582,11 +647,11 @@ drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  
 drawBlock :: Coord-> Picture
 
 drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color blue  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color blue  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
 
    ]))
     ]
@@ -594,41 +659,41 @@ drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 drawBlock  (b,c,2) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color yellow  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color yellow  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b +blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
    ]))]
   where
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 drawBlock  (b,c,3) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color red  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color red  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c -blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
    ]))]
   where
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 drawBlock  (b,c,4) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color green  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color green  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
    ]))]
   where
   w = fromIntegral screenWidth  / 2
   h = fromIntegral screenHeight / 2
 drawBlock  (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color orange  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color orange  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
    ]))]
   where
   w = fromIntegral screenWidth  / 2
@@ -636,11 +701,11 @@ drawBlock  (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
 
 
 drawBlock  (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
- [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
-   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
-   ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
+ [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])            -- белая рамка
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (-c - 2)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + 2),fromIntegral (-c-blockSize )), (fromIntegral  (b +2),fromIntegral (- c)) ])
+   ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-(blockSize - 2))), (fromIntegral b, fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c-28)) ])
+   ,color magenta  (polygon [ ( fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c)), (fromIntegral b+(blockSizeFloat - 2), fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (-c - blockSize)), (fromIntegral  (b + blockSize),fromIntegral (- c)) ])
    ]))]
   where
   w = fromIntegral screenWidth  / 2
@@ -724,38 +789,42 @@ fieldWidth :: Float
 fieldWidth = 150
 
 
-drawTetris ::Gamestate-> Picture
-drawTetris (b,fs,s,t,tetristype,p,k) | tetristype==1 =  pictures
-  [ drawFigureCircle (b,fs,s,t,tetristype,p,k),
-   drawBoardCircle b ,
-    drawScore t,
-    translate (0) ((0) - 100) (scale 1.3 1.3 (color cyan (circle  ( 205)))),
-    translate (-0.3 * fieldWidth/2 + 113) (fieldHeight/2 + (fromIntegral screenHeight /2) - 53)
-  (roundedRect (withAlpha 0.7 white) (greyN 0.7) ( fieldWidth/2 + 43) ((fromIntegral screenHeight / 10) + fieldHeight / 15) (0.1 * fieldWidth) (0.02 * fieldWidth)),
-  drawmenuCircle,
-  drawmenuSmooth,
-  drawtextCircle,
-  drawtextSmooth 
+drawTetris ::GameState-> Picture
+drawTetris u | ((typerepres u)==TetrisRound) =  pictures
+  [ drawFigureCircle (fromGS u),
+    drawBoardCircle (board u),
+    drawScore (score u),
+    drawCircleBackGr,
+    drawRectangleMenu,
+    drawmenuCircle,
+    drawmenuSmooth,
+    drawtextCircle,
+    drawtextSmooth 
   
   
   ] 
     |otherwise = pictures
-  [ drawFigure (b,fs,s,t,tetristype,p,k),
-   drawBoard b ,
-    drawScore t,
-    translate (-0.3 * fieldWidth/2 + 113) (fieldHeight/2 + (fromIntegral screenHeight /2) - 53)
-  (roundedRect (withAlpha 0.7 white) (greyN 0.7) ( fieldWidth/2 + 43) ((fromIntegral screenHeight / 10) + fieldHeight / 15) (0.1 * fieldWidth) (0.02 * fieldWidth)),
-  drawmenuCircle,
-  drawmenuSmooth,
-  drawtextCircle,
-  drawtextSmooth  ,
-  pictures [ translate ((-(fromIntegral screenWidth  / 2))) (fromIntegral screenHeight / 2) (scale  1 1    (color cyan (line [(0,0) , (0,-600),(300,-600),(300,0),(0,0)])))]
+  [drawFigure (fromGS u),
+   drawBoard (board u) ,
+   drawScore (score u),
+   drawRectangleMenu,
+   drawmenuCircle,
+   drawmenuSmooth,
+   drawtextCircle,
+   drawtextSmooth  ,
+   drawRectanglBackGr
   
   
   
   ] 
+drawRectanglBackGr::Picture
+drawRectanglBackGr = pictures [ translate ((-(fromIntegral screenWidth  / 2))) (fromIntegral screenHeight / 2) (scale  1 1    (color cyan (line [(0,0) , (0,-600),(300,-600),(300,0),(0,0)])))]
+drawCircleBackGr::Picture
+drawCircleBackGr = translate (0) ((0) - 100) (scale 1.3 1.3 (color cyan (circle  ( 205))))
 
-drawmenuSmooth :: Picture
+drawRectangleMenu ::Picture
+drawRectangleMenu = translate (-0.3 * fieldWidth/2 + 113) (fieldHeight/2 + (fromIntegral screenHeight /2) - 53)
+  (roundedRect (withAlpha 0.7 white) (greyN 0.7) ( fieldWidth/2 + 43) ((fromIntegral screenHeight / 10) + fieldHeight / 15) (0.1 * fieldWidth) (0.02 * fieldWidth))
 drawmenuSmooth = (color orange (polygon [ (101, 290), (101, 250), (148, 250), (148, 290) ]))
 
 drawmenuCircle :: Picture
@@ -810,23 +879,25 @@ updateSpeed _ _ = 0
 --Аргумент функции play, обновляет состояние тетриса
 --С каждым кадром двигает фигуру вниз и пока здесь же проверяет, не достигла ли фигура нижней границы
 
-
-updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)|p==0 = updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)            
+updateTetris :: Float -> GameState -> GameState
+updateTetris dt u = updateTetrisHelp dt (fromGS u)
+                                                                  
+updateTetrisHelp :: Float -> Gamestate -> GameState
+updateTetrisHelp dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)|p==TetrisStepped = updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)            
                                                                   |otherwise = updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
 
 
-updateTetrisStepped :: Float -> Gamestate -> Gamestate
-updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (genEmptyBoard,rest,(0.7, 0),0,v,p,0.7)
+updateTetrisStepped :: Float -> Gamestate -> GameState
+updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.7, 0),0,v,p,0.7))
                                                               -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
-                                                                            | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)
+                                                                            | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
                                                                               where
                                                                    -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
                                                                               gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
-updateTetrisSmooth:: Float -> Gamestate -> Gamestate
-updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (genEmptyBoard,rest,(0.01, 0),0,v,p,0.01)
+updateTetrisSmooth:: Float -> Gamestate -> GameState
+updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.01, 0),0,v,p,0.01))
                                                               -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
-                                                                            | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)
+                                                                            | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
                                                                               where
                                                                    -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
                                                                               gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
@@ -835,22 +906,22 @@ updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | game
 -- =======================================
 
 newTact::Gamestate -> Float -> Float -> Gamestate
-newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,0,k) dt tact
-  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,0,k)
-  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,0,k)
-  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s,v,0,k) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,0,k)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,0,k)
+newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k) dt tact
+  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k)
+  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisStepped,k)
+  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s,v,TetrisStepped,k) (dt + ti - tact) tact
+  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisStepped,k)
+  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisStepped,k)
                                         where
                                           new = ti + dt >= tact
                                           collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
                                           paused = sp < 0
-newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,1,k) dt tact
-  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,1,k)
-  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,1,k)
-  | new = newTact (b, (Figure sha dir (f1,f2 + 1,f3):rest), (sp, 0), s,v,1,k) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,1,k)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,1,k)
+newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k) dt tact
+  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k)
+  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisSmooth,k)
+  | new = newTact (b, (Figure sha dir (f1,f2 + 1,f3):rest), (sp, 0), s,v,TetrisSmooth,k) (dt + ti - tact) tact
+  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisSmooth,k)
+  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisSmooth,k)
                                         where
                                           new = ti + dt >= tact
                                           collides =  collidesFigureDownSmooth (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
@@ -874,59 +945,68 @@ newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 
 
-handleTetris :: Event -> Gamestate -> Gamestate
+handleTetris :: Event -> GameState -> GameState
 
-handleTetris (EventKey (Char 'l') Down _ _) (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) = moveRight (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k)
+handleTetris (EventKey (Char 'l') Down _ _) u = moveRight (fromGS u)
 handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k)  = moveLeft (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k)
+handleTetris (EventKey (Char 'j') Down _ _)  u  = moveLeft (fromGS u)
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k)  = dropit (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) (screenHeight-c)
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) u  = dropithelp (fromGS u)
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) = turn (a, (Figure sha dir (b ,c,z):rest),d,e,v,p,k)
+handleTetris (EventKey (Char 'k') Down _ _ ) u = turn (fromGS u)
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e,v,p,k)
+handleTetris (EventKey (Char 'p') Down _ _ ) u = tetrispause (fromGS u)
 handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
-handleTetris (EventKey (MouseButton LeftButton) Up _ mouse) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) =  (mouseToCell mouse  (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) )
+handleTetris (EventKey (MouseButton LeftButton) Up _ mouse) u =  (mouseToCell mouse  (fromGS u ))
 handleTetris  _ t = t  
 
 
+dropithelp ::Gamestate -> GameState
+dropithelp (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) = dropit (a,(Figure sha dir (b,c,z):rest),d,e,v,p,k) (screenHeight-c)
+tetrispause :: Gamestate->GameState
+tetrispause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) =(toGS (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e,v,p,k))
+tetrTypbuttonx1 :: Float
+tetrTypbuttonx1 = 34
+tetrTypbuttonx2 :: Float
+tetrTypbuttonx2 = 100
+
+tetrTypbuttony1 :: Float
+tetrTypbuttony1 = 250
+tetrTypbuttony2 :: Float
+tetrTypbuttony2 = 290
 
 
 
+tetrMovebuttonx1 :: Float
+tetrMovebuttonx1 = 101
+tetrMovebuttonx2 :: Float
+tetrMovebuttonx2 = 148
 
-mouseToCell :: Point->Gamestate -> Gamestate
-mouseToCell (x, y) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k)  | (x> 34 && x<100 && y > 250 && y < 290 && v==0) =  (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,1,p,k)
-                                                                       | (x> 34 && x<100 && y > 250 && y < 290 && v==1) =  (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,0,p,k)
-                                                                       | (x> 101 && x<148 && y > 250 && y < 290 && p==0) =  (genEmptyBoard,rest,(0.01, 0),0,v,1,0.01)
-                                                                       | (x> 101 && x<148 && y > 250 && y < 290 && p==1) =  (genEmptyBoard,rest,(0.7, 0),0,v,0,0.7)
-                                                           |otherwise =  (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k)
---(genEmptyBoard,rest,(k, 0),0,v,p,k)
---(color orange (polygon [ (101, 290), (101, 250), (148, 250), (148, 290) ]))
---(color yellow (polygon [ (34, 290), (34, 250), (100, 250), (100, 290) ]))
-  --(Just (i, j))
-  --where
-   -- i = floor (x + fromIntegral screenWidth  / 2) `div` cellSize
-    --j = floor (y + fromIntegral screenHeight / 2) `div` cellSize
+tetrMovebuttony1 :: Float
+tetrMovebuttony1 = 250
+tetrMovebuttony2 :: Float
+tetrMovebuttony2 = 290
 
 
 
-type Node = (Int, Int)
+mouseToCell :: Point->Gamestate -> GameState
+mouseToCell (x, y) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k)  | (x> tetrTypbuttonx1 && x<tetrTypbuttonx2 && y > tetrTypbuttony1 && y < tetrTypbuttony2 ) =  (toGS(a,(Figure sha dir (b,c,z):rest),(sp, ti),e,switchTetrisType v,p,k))
+                                                                       
+                                                                       | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 && p==TetrisStepped) =  (toGS(genEmptyBoard,rest,(0.01, 0),0,v,switchTetrisMove p,0.01))
+                                                                       | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 && p==TetrisSmooth) =  (toGS(genEmptyBoard,rest,(0.7, 0),0,v,switchTetrisMove p,0.7))
+                                                           |otherwise =  (toGS(a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k))
+
+switchTetrisType :: TetrisType -> TetrisType
+switchTetrisType TetrisRect = TetrisRound
+switchTetrisType TetrisRound = TetrisRect
 
 
+switchTetrisMove :: TetrisMove -> TetrisMove
+switchTetrisMove TetrisStepped = TetrisSmooth
+switchTetrisMove TetrisSmooth = TetrisStepped
 
-
--- | Поставить камень и сменить игрока (если возможно).
---placeStone :: Maybe Node -> Game -> Game
---placeStone Nothing game = game
---placeStone (Just point) game =
---    case gameWinner game of
---      Just _ -> game    -- если есть победитель, то поставить фишку нельзя
---      Nothing -> case modifyAt point (gameBoard game) (gamePlayer game) (listBoard game) of --здесь еще нужно дописать функцию преобразования
---        Nothing -> game -- если поставить фишку нельзя, ничего не изменится
---        Just newBoard -> completeMove (ruleKo (removeStones (changeBoard newBoard game)))
-    
