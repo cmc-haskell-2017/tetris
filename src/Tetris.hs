@@ -259,25 +259,31 @@ startGame  _ =  0
 
 
 moveLeft::Gamestate -> Gamestate
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,0,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,0,k) |collidewall = (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,0,k)
+        | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
         |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,0,k)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,1,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
+    collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
+moveLeft (a,((Figure s t (b,c,z)):rest),d,e,v,1,k) |collidewall = (a, ((Figure s t (8*blockSize,c,z )):rest),d,e,v,1,k)
+     | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
         |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e,v,1,k)
   where 
     collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b - blockSize,c,z))) a    
-
+    collidewall = collidesFigureSidesWallLeft (figureToDraw (Figure s t (b - blockSize,c,z))) a
 moveRight::Gamestate -> Gamestate
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,0,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,0,k) | collidewall  = (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,0,k)
+         | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,0,k)
         |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,0,k)
   where 
     collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
-moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,1,k) | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
+    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a    
+moveRight (a,(Figure s t (b,c,z)):rest,d,e,v,1,k)| collidewall  = (a, ((Figure s t (blockSize,c,z )):rest),d,e,v,1,k)
+       | collide = (a, ((Figure s t (b,c,z)):rest),d,e,v,1,k)
         |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e,v,1,k)
   where 
     collide = collidesFigureSidesSmooth (figureToDraw (Figure s t (b + blockSize,c,z))) a
-
+    collidewall = collidesFigureSidesWallRight (figureToDraw (Figure s t (b + blockSize,c,z))) a
 collidesBlock::Coord -> Bool
 collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
        |otherwise = False
@@ -288,6 +294,11 @@ collidesBlockSides (a,b,z) [] = (a < 0) || (a  + blockSize > screenWidth)
 collidesBlockSides (a,b,z) ((brda, brdb,z1):[]) = (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)
 collidesBlockSides (a,b,z) ((brda, brdb,z1):brds) | (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
                                              | otherwise = collidesBlockSides (a,b,z) brds
+collidesBlockSidesWhallLeft::Coord -> Board -> Bool
+collidesBlockSidesWhallLeft (a,b,z) _ = (a  - blockSize <(-30))
+collidesBlockSidesWhallRight::Coord -> Board -> Bool
+collidesBlockSidesWhallRight (a,b,z) _ =  (a  + blockSize > screenWidth)
+
 collidesBlockSidesSmooth::Coord -> Board -> Bool
 collidesBlockSidesSmooth (a,b,z) [] = (a < 0) || (a  + blockSize > screenWidth)
 collidesBlockSidesSmooth (a,b,z) ((brda, brdb,z1):[]) = (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)||((a==brda) &&(b>(brdb - blockSize) && b<(brdb + blockSize)))
@@ -321,7 +332,12 @@ collidesFigureSmooth (a,b,c,d) board = (collidesFigureSidesSmooth (a,b,c,d) boar
 collidesFigureSides::BlockedFigure -> Board -> Bool
 collidesFigureSides (a,b,c,d) board | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
         |otherwise = False
-
+collidesFigureSidesWallLeft    ::BlockedFigure -> Board -> Bool
+collidesFigureSidesWallLeft  (a,b,c,d) board | (collidesBlockSidesWhallLeft a board) || (collidesBlockSidesWhallLeft b board) || (collidesBlockSidesWhallLeft c board) || (collidesBlockSidesWhallLeft d board) = True
+        |otherwise = False
+collidesFigureSidesWallRight::BlockedFigure -> Board -> Bool
+collidesFigureSidesWallRight (a,b,c,d) board | (collidesBlockSidesWhallRight a board) || (collidesBlockSidesWhallRight b board) || (collidesBlockSidesWhallRight c board) || (collidesBlockSidesWhallRight d board) = True
+        |otherwise = False
 collidesFigureSidesSmooth::BlockedFigure -> Board -> Bool
 collidesFigureSidesSmooth (a,b,c,d) board | (collidesBlockSidesSmooth a board) || (collidesBlockSidesSmooth b board) || (collidesBlockSidesSmooth c board) || (collidesBlockSidesSmooth d board) = True
         |otherwise = False        
@@ -374,149 +390,190 @@ drawBlockCircle :: Coord-> Picture
 drawBlockCircle  (b,c,1) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color blue  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )             -- белая рамка
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
                     |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ (rotate (-324) (color blue   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ))),
-  (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )) ) ]))
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color blue   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
     ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color blue   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
-   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) 
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
+drawBlockCircle  (b,c,2) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color yellow  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2  ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )            -- белая рамка
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
-                        |(b==270) = 
-    pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (   pictures [(rotate (-324) (color yellow   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) )),
-      (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) )),
-      (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ))
-         ]))]
+                    |(b==270) = 
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color yellow   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+    ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color yellow   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )            -- белая рамка
-   
+  color yellow   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
+drawBlockCircle  (b,c,3) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color red  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 6) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )              -- белая рамка
+  color red  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
-                 |(b==270) = 
- pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (  pictures [(rotate (-324) (color red   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ,
-  (rotate (-324) ( color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
-  (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) )) ]))]
+                    |(b==270) = 
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color red   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+    ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color red   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ) ,
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )             -- белая рамка
-   
+  color red   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
+drawBlockCircle  (b,c,4) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
   color green  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )            -- белая рамка
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
-                  |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (  pictures [(rotate (-324) (color green   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-    (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
-    (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ) ))]))]
+                    |(b==270) = 
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color green   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+    ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color green   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )             -- белая рамка
-   
+  color green   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
+drawBlockCircle  (b,c,5) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color orange  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 6) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 1) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5 -2 ) (fromIntegral 1) )             -- белая рамка
+  color orange  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
-                  |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures [ (rotate (-324) (color orange   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))) ,
-   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )))  ]))]
+                    |(b==270) = 
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color orange   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+    ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color orange   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )             -- белая рамка
-   
+  color orange   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
   w = fromIntegral 0
   h = fromIntegral 0
-drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - 100) (scale 2.3 2.3  (pictures
+drawBlockCircle  (b,c,_) |(b==0)=   pictures [ translate (-w) (h - 100) (scale  2.3 2.3 (pictures
  [ --color magenta (rotate (35 ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color white  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ),
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5  -2) (fromIntegral 1) ) ,
-  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 3) / 5-2  ) (fromIntegral 1) )              -- белая рамка
+  color white  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 - 15) / 5 -2 ) (fromIntegral 1) ),
+  color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (1  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) ) ,
+  color magenta  (thickArc (fromIntegral (35  )) (fromIntegral (36  )) (fromIntegral (c + 5 ) / 5 -2 ) (fromIntegral 6) )             -- белая рамка
    
 
    ]))
     ]
-                 |(b==270) = 
-  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures [ (rotate (-324) (color white   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
-  (rotate (-324)  (color magenta   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ))),
-   (rotate (-324) (color magenta   (thickArc (0) (36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) ))) ]))]
+                    |(b==270) = 
+  pictures [ translate (-w) (h - 100) (scale  2.3 2.3  ( pictures[ 
+    (rotate (-324) (color white   (thickArc (0) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5 +15) / 5 -2 ) (fromIntegral 1) ))),
+   (rotate (-324) (color magenta  (thickArc (fromIntegral (0  )) (fromIntegral (36  )) (fromIntegral (c + 5-15) / 5 -2 ) (fromIntegral 1) )) ),
+   (rotate (-324) (color magenta   (thickArc (0) (1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))),
+    (rotate (-324) (color magenta   (thickArc (35) (36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ))) ]))
+    ]                 
                    |otherwise = pictures [ translate (-w) (h - 100) (scale  2.3 2.3  (pictures
  [ --color magenta (rotate (fromIntegral(-b) ) (thickArc (fromIntegral (0 )) (fromIntegral (36 )) (fromIntegral (c + 5) / 5 ) (fromIntegral 6) )),
-  color white   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 1) ),
-  color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 3) / 5  - 2) (fromIntegral 1) )            -- белая рамка
-   
+  color white   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,            -- белая рамка
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5+15) / 5  - 2) (fromIntegral 1) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5-15) / 5  - 2) (fromIntegral 1) ) ,
 
+   color magenta   (thickArc (((fromIntegral b)/30)*36 ) (((fromIntegral b)/30)*36 + 1) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) ) ,
+   color magenta   (thickArc (((fromIntegral b)/30)*36 +35) (((fromIntegral b)/30)*36 + 36) (fromIntegral (c + 5) / 5  - 2) (fromIntegral 6) )
    ]))
     ]
   where
