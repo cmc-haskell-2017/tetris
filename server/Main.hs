@@ -119,7 +119,7 @@ addClient client config@Config{..} = do
   forkId <- if (length == 0) then
               forkIO $ periodicUpdates 10000 config
             else 
-              forkIO $ periodicUpdates 10000 config
+              forkIO $ pass
   atomically $ do
     name:names <- readTVar configNames
     writeTVar configNames names
@@ -127,6 +127,11 @@ addClient client config@Config{..} = do
     modifyTVar controlThreads (Map.insert name forkId)
     modifyTVar configUniverse (Map.insert name (toGS $ genUniverse g))
     return name
+
+
+pass :: IO ()
+pass = return ()
+
 
 getLength :: Config -> IO Int
 getLength Config{..} = do
@@ -191,17 +196,29 @@ disconnectState Closed = do
 disconnectState _ = do return ()
 
 
-
 broadcastUpdate :: (Map PlayerName GameState) -> Config -> IO ()
 broadcastUpdate un cfg@Config{..} = do
   clients <- readTVarIO configClients
   txt <- do return (Text.singleton 'f')
   mapM_ (forkIO . sendUpdate) (Map.toList clients)
-  where
-    sendUpdate (name, conn) = mapM_ (sendData cfg conn name . toWeb) (Map.elems un)
+    where
+      sendUpdate (name, conn) = do
+            
+            fst <- return (un Map.! name) 
+            snd <- return (head $ Map.elems (Map.delete name un)) 
+
+            if fst == snd then putStrLn "FUCK!!!"
+            else putStrLn "OK"
+
+            -- putStrLn $ show fst ++ "fst"
+            -- putStrLn $ show snd ++ "snd"
+            -- putStrLn "-------------------------------"
+
+            (sendData cfg conn name) $ GSPair (toWeb fst) (toWeb snd)
+            return ()
 
 
-sendData :: Config -> Client -> PlayerName -> WebGS -> IO ()
+sendData :: Config -> Client -> PlayerName -> GSPair -> IO ()
 sendData cfg@Config{..} conn name gs = sendBinaryData conn gs `catch` handleClosedConnection name
   where
     handleClosedConnection :: PlayerName -> ConnectionException -> IO ()

@@ -101,7 +101,7 @@ data GameState = GameState
   , speed   :: Speed
   , time    :: Time
   , score   :: Score
-  } deriving (Generic)
+  } deriving (Generic, Eq)
 
 
 instance Show GameState where
@@ -144,6 +144,15 @@ instance Show WebGS where
 instance Binary WebGS
 
 instance WebSocketsData WebGS where
+  fromLazyByteString = decode
+  toLazyByteString   = encode
+
+
+data GSPair = GSPair WebGS WebGS deriving(Generic)
+
+instance Binary GSPair
+
+instance WebSocketsData GSPair where
   fromLazyByteString = decode
   toLazyByteString   = encode
 

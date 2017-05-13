@@ -14,7 +14,7 @@ main = run
 run :: IO ()
 run = do
  g <- newStdGen
- play display bgColor fps (genUniverse g ) drawTetris handleTetris updateTetris
+ play display bgColor fps (genUniverse g ) (drawTetris 0) handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
     bgColor = black   -- цвет фона

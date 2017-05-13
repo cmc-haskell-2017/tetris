@@ -57,6 +57,10 @@ genUniverse::StdGen -> Gamestate
 genUniverse g = (genEmptyBoard,initFigures g,(init_tact, 0),0)
 
 
+genEmptyUniverse::StdGen -> Gamestate
+genEmptyUniverse _ = (genEmptyBoard,[],(init_tact, 0),0)
+
+
 -------------------------------------------------------------------------------------------------------------------------------------
 
 

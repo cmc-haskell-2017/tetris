@@ -26,13 +26,25 @@ data MP_Gamestate = MP_Gamestate
 
 handleUpdatesMP :: MP_Gamestate -> IO ()
 handleUpdatesMP MP_Gamestate{..} = forever $ do
-  -- putStrLn "here!"
-  myGS <- receiveData connection
-  opGS <- receiveData connection
-  -- putStrLn "there!"
-  atomically $ writeTVar myState (fromWebGS myGS)
-  atomically $ writeTVar opponentState (fromWebGS opGS)
+  pair <- receiveData connection
 
+  myGS <- return (getFst pair)
+  opGS <- return (getSnd pair)
+
+  if (fromWebGS myGS) == (fromWebGS opGS) then putStrLn "FFF"
+  else putStrLn "OOOO"
+
+  -- putStrLn "there!"
+  atomically $ do
+     writeTVar myState (fromWebGS myGS)
+     writeTVar opponentState (fromWebGS opGS)
+
+
+getFst :: GSPair -> WebGS
+getFst (GSPair f s) = f
+
+getSnd :: GSPair -> WebGS
+getSnd (GSPair f s) = s
 
 handleTetrisMP :: Event -> MP_Gamestate -> IO MP_Gamestate
 
@@ -55,9 +67,17 @@ renderTetris :: MP_Gamestate -> IO Picture
 renderTetris MP_Gamestate{..} = do
  gs1 <- readTVarIO myState
  gs2 <- readTVarIO opponentState
- io <- return (drawTetris gs1)
- io2 <- return (drawTetris gs2)
- return io
+
+ if gs1 == gs2 then putStrLn "fuck"
+ else putStrLn "OK"
+
+ -- putStrLn $ show gs1 ++ " ---------------------------- "
+ -- putStrLn $ show gs2 ++ " +++++++++++++++++++++++++++"
+
+ io1  <- return (drawTetris (div screenWidth 2) gs1)
+ io2  <- return (drawTetris ( - div screenWidth 2) gs2)
+ return (pictures [io1, io2])
+ -- return io1
 
 
 -- does nothing
@@ -70,13 +90,13 @@ updateTetrisMP dt gs = do
 main :: IO ()
 main = do
  g <- newStdGen
- state <- atomically $ newTVar (genUniverse g)
+ state <- atomically $ newTVar (genEmptyUniverse g)
  runClient "localhost" 8000 "/connect" $ \conn -> do
     let gs = MP_Gamestate state state conn
     _ <- forkIO (handleUpdatesMP gs)
     playIO display bgColor fps gs renderTetris handleTetrisMP updateTetrisMP
     return ()
   where
-    display  = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
+    display  = InWindow "Tetris" (screenWidth * 2, screenHeight) (200, 200)
     bgColor  = black      -- цвет фона
     fps      = glob_fps   -- кол-во кадров в секунду

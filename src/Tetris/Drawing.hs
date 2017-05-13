@@ -67,12 +67,12 @@ figureToDrawT (Figure T d (x,y,z)) | d == DDown = ((x-blockSize, y,z), (x, y,z),
 -- Drawing
 -- =========================================
 
-drawBoard::Board  -> Picture
-drawBoard s = pictures (map drawBlock s)
+drawBoard ::  Int -> Board -> Picture
+drawBoard bias s = pictures (map (drawBlock bias) s)
 
-drawBlock :: Coord-> Picture
+drawBlock :: Int -> Coord -> Picture
 
-drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawBlock bias (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color blue  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -82,9 +82,9 @@ drawBlock  (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ]))
     ]
   where
-  w = fromIntegral screenWidth  / 2
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
   h = fromIntegral screenHeight / 2
-drawBlock  (b,c,2) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawBlock bias (b,c,2) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color yellow  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -92,9 +92,9 @@ drawBlock  (b,c,2) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ]))]
   where
-  w = fromIntegral screenWidth  / 2
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
   h = fromIntegral screenHeight / 2
-drawBlock  (b,c,3) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawBlock bias (b,c,3) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color red  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -102,9 +102,9 @@ drawBlock  (b,c,3) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ]))]
   where
-  w = fromIntegral screenWidth  / 2
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
   h = fromIntegral screenHeight / 2
-drawBlock  (b,c,4) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawBlock bias (b,c,4) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color green  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -112,9 +112,9 @@ drawBlock  (b,c,4) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ]))]
   where
-  w = fromIntegral screenWidth  / 2
-  h = fromIntegral screenHeight / 2
-drawBlock  (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
+  h = fromIntegral screenHeight / 2 
+drawBlock bias (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color orange  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -122,11 +122,11 @@ drawBlock  (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ]))]
   where
-  w = fromIntegral screenWidth  / 2
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
   h = fromIntegral screenHeight / 2
 
 
-drawBlock  (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
+drawBlock bias (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
  [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
@@ -134,35 +134,38 @@ drawBlock  (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
    ]))]
   where
-  w = fromIntegral screenWidth  / 2
+  w = fromIntegral screenWidth  / 2 + fromIntegral bias
   h = fromIntegral screenHeight / 2
 
-drawFigure::Gamestate  ->  Picture
-drawFigure (b,(f:fs),s,t) = drawBlockedFigure  (figureToDraw f)
 
-drawBlockedFigure::BlockedFigure -> Picture
+drawFigure :: Int -> Gamestate ->  Picture
+drawFigure bias (b,(f:fs),s,t) = drawBlockedFigure bias (figureToDraw f)
+drawFigure _ (b,[],s,t) = Blank
 
- 
-drawBlockedFigure ((a, b, c, d)) =         pictures  [drawBlock   a ,
-                                                     drawBlock    b ,
-                                                     drawBlock     c ,
-                                                     drawBlock     d ]
+
+
+drawBlockedFigure :: Int -> BlockedFigure -> Picture
+drawBlockedFigure bias ((a, b, c, d)) =   pictures  [drawBlock bias a ,
+                                                     drawBlock bias b ,
+                                                     drawBlock bias c ,
+                                                     drawBlock bias d ]
+
 
 --Рисуем тетрис
-drawTetris ::Gamestate-> Picture
-drawTetris (b,fs,s,t) = pictures
-  [ drawFigure (b,fs,s,t),
-   drawBoard b ,
-    drawScore t
+drawTetris :: Int -> Gamestate -> Picture
+drawTetris bias (b,fs,s,t) = pictures
+  [ drawFigure  bias (b,fs,s,t) ,
+    drawBoard   bias b ,
+    drawScore   bias t
   ] 
 
 
-drawScore :: Score -> Picture
-drawScore score = translate (-w) h (scale 30 30 (pictures
+drawScore :: Int -> Score -> Picture
+drawScore bias score = translate (-w) h (scale 30 30 (pictures
   [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
   , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
   , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
   ]))
   where
-    w = fromIntegral screenWidth  / 2
+    w = fromIntegral screenWidth  / 2 + fromIntegral bias
     h = fromIntegral screenHeight / 2
