@@ -4,10 +4,6 @@ import System.Random
 import Graphics.Gloss.Interface.Pure.Game
 
 -- | FIXME: ???
-glob_fps :: Int
-glob_fps = 60
-
--- | FIXME: ???
 run :: IO ()
 run = do
  g <- newStdGen
@@ -21,7 +17,11 @@ run = do
 -- * Типы
 -- =========================================
 
--- | Размер блока (FIXME : в каких единицах?).
+-- | FIXME: ???
+glob_fps :: Int
+glob_fps = 60
+
+-- | Ширина и высота блока в пикселях.
 blockSize :: Int
 blockSize = 30
 
@@ -220,43 +220,43 @@ moveLeft (a, ((Figure s t (b, c, z)) : rest), d, e)
 moveLeft gs = gs
 
 -- | Шаг вправо.
--- FIXME: форматировать как moveLeft.
 moveRight :: Gamestate -> Gamestate
-moveRight (a, (Figure s t (b, c, z)) : rest, d, e) | collide = (a, ((Figure s t (b, c, z)) : rest), d, e)
-        |otherwise = (a, ((Figure s t (b + blockSize, c, z)) : rest), d, e)
+moveRight (a, (Figure s t (b, c, z)) : rest, d, e) 
+  | collide   = (a, ((Figure s t (b, c, z))             : rest), d, e)
+  | otherwise = (a, ((Figure s t (b + blockSize, c, z)) : rest), d, e)
   where
-    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize, c, z))) a
+    collide  = collidesFigureSides (figureToDraw (Figure s t (b + blockSize, c, z))) a
 moveRight gs = gs
 
 -- | Проверка, пересекается ли блок (FIXME: с чем?).
--- FIXME: форматировать охранные выражения как выше.
 collidesBlock :: Coord -> Bool
-collidesBlock (a, b, _) | (a < 0) || (a + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
-       |otherwise = False
+collidesBlock (a, b, _) 
+  | (a < 0) || (a + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
+  | otherwise = False
 
 -- | Проверка, пересекается ли блок (FIXME: с чем?).
--- FIXME: форматировать охранные выражения как выше.
 collidesBlockSides :: Coord -> Board -> Bool
-collidesBlockSides (a, _, _) [] = (a < 0) || (a + blockSize > screenWidth)
-collidesBlockSides (a, b, _) ((brda, brdb, _) : []) = (a < 0) || (a + blockSize > screenWidth) || (a==brda) && (b==brdb)
-collidesBlockSides (a, b, z) ((brda, brdb, _) : brds) | (a < 0) || (a + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
-                                             | otherwise = collidesBlockSides (a, b, z) brds
+collidesBlockSides (a, _, _) []                     = (a < 0) || (a + blockSize > screenWidth)
+collidesBlockSides (a, b, _) ((brda, brdb, _) : []) = (a < 0) || (a + blockSize > screenWidth) || (a == brda) && (b == brdb)
+collidesBlockSides (a, b, z) ((brda, brdb, _) : brds) 
+  | (a < 0) || (a + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
+  | otherwise = collidesBlockSides (a, b, z) brds
 
 -- | Проверка, пересекается ли блок (FIXME: с чем?).
--- FIXME: форматировать охранные выражения как выше.
 collidesBlockDown :: Coord -> Board-> Bool
-collidesBlockDown (_, b, _) []  =   (b + blockSize > screenHeight)
-collidesBlockDown (a, b, _) ((brda, brdb, _) : [])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
-collidesBlockDown (a, b, z) ((brda, brdb, _) : brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
-                                            |  otherwise = collidesBlockDown (a, b, z) brds
+collidesBlockDown (_, b, _) []                      = (b + blockSize > screenHeight)
+collidesBlockDown (a, b, _) ((brda, brdb, _) : [])  = (b + blockSize > screenHeight) || (a==brda) && (b==brdb)
+collidesBlockDown (a, b, z) ((brda, brdb, _) : brds)  
+  | (b + blockSize > screenHeight) || (a == brda) && (b == brdb)  = True
+  |  otherwise = collidesBlockDown (a, b, z) brds
 
 -- | Проверка, пересекается ли блок (FIXME: с чем?).
--- FIXME: форматировать охранные выражения как выше.
 collidesBlockUp :: Coord -> Board-> Bool
-collidesBlockUp (_, b, _) []  =  b < 0
-collidesBlockUp (_, b, _) ((_, brdb, _) : [])  =   (b < 0 && (b==brdb))
-collidesBlockUp (a, b, z) ((_, brdb, _) : brds)  | b < 0 && (b==brdb)  = True
-                                          |  otherwise = collidesBlockUp (a, b, z) brds
+collidesBlockUp (_, b, _) []                    =  b < 0
+collidesBlockUp (_, b, _) ((_, brdb, _) : [])   = (b < 0) && (b == brdb)
+collidesBlockUp (a, b, z) ((_, brdb, _) : brds)  
+  | b < 0 && (b == brdb)  = True
+  | otherwise             = collidesBlockUp (a, b, z) brds
 
 -- | Пересекает ли фигура доску или границы?
 collidesFigure :: BlockedFigure -> Board -> Bool
@@ -265,16 +265,16 @@ collidesFigure (a, b, c, d) board = or
   , collidesFigureDown  (a, b, c, d) board ]
 
 -- | Проверка (FIXME: чего?)
--- FIXME: форматировать охранные выражения как выше.
 collidesFigureSides :: BlockedFigure -> Board -> Bool
-collidesFigureSides (a, b, c, d) board | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
-        |otherwise = False
+collidesFigureSides (a, b, c, d) board 
+  | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
+  | otherwise = False
 
 -- | Проверка, что фигура касается снизу доски или поля.
--- FIXME: форматировать охранные выражения как выше.
 collidesFigureDown :: BlockedFigure -> Board -> Bool
-collidesFigureDown (a, b, c, d) board | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) || (collidesBlockDown d board) = True
-        |otherwise = False
+collidesFigureDown (a, b, c, d) board 
+  | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) || (collidesBlockDown d board) = True
+  | otherwise = False
 
 -- | Проверка, закончилась ли игра.
 isGameOver :: Gamestate -> Bool
@@ -288,20 +288,21 @@ sortRows ((brda, brdb, z) : brds) = sortRows (filter (\(_, y, _) -> y > brdb) br
 
 -- | Удалям заполненные строки.
 -- FIXME: эту функцию невозможно прочитать!
--- FIXME: форматировать охранные выражения и where как выше.
 deleteRows :: Board -> Board
 deleteRows [] = []
-deleteRows ((brda, brdb, z) : brds) | (length (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) == 10)  =  (deleteRows (map (\(x, y, buf) -> (x, y + blockSize, buf)) (filter (\(_, y, _) -> y < brdb) l)) ++ (filter (\(_, y, _) -> y > brdb) l))
-                              | otherwise = (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) ++ (deleteRows  (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds)))                  -----   ToDo : Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
-                         where l = (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds))
+deleteRows ((brda, brdb, z) : brds) 
+  | (length (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) == 10)  =  (deleteRows (map (\(x, y, buf) -> (x, y + blockSize, buf)) (filter (\(_, y, _) -> y < brdb) l)) ++ (filter (\(_, y, _) -> y > brdb) l))
+  | otherwise = (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) ++ (deleteRows  (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds)))                  -----   ToDo : Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
+  where 
+    l = (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds))
 
 -- | При нажатии клавиши "вниз" роняет фигуру.
--- FIXME: форматировать охранные выражения и where как выше.
 dropit :: Gamestate -> Int -> Gamestate
-dropit (a, ((Figure sha dir (b, c, z)) : rest), d, e) pts  | collide = (a, ((Figure sha dir (b, c, z)) : rest), d, e+(div pts blockSize))
-                                                  | otherwise = dropit (a, ((Figure sha dir (b, c + blockSize, z)) : rest), d, e) pts
-                                          where
-                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b, c + blockSize, z))) a
+dropit (a, ((Figure sha dir (b, c, z)) : rest), d, e) pts  
+  | collide   =        (a, ((Figure sha dir (b, c,             z)) : rest), d, e + (div pts blockSize))
+  | otherwise = dropit (a, ((Figure sha dir (b, c + blockSize, z)) : rest), d, e) pts
+  where
+    collide = collidesFigureDown (figureToDraw (Figure sha dir (b, c + blockSize, z))) a
 dropit gs _ = gs
 
 -- | Рисуем доску.
@@ -382,20 +383,20 @@ drawFigure (_, (f : _), _, _) = drawBlockedFigure  (figureToDraw f)
 drawFigure _ = blank
 
 -- | Рисуем блоки фигуры.
--- FIXME: поправить отступы.
 drawBlockedFigure :: BlockedFigure -> Picture
-drawBlockedFigure ((a, b, c, d)) =         pictures  [drawBlock   a ,
-                                                     drawBlock    b ,
-                                                     drawBlock     c ,
-                                                     drawBlock     d ]
+drawBlockedFigure ((a, b, c, d)) = pictures 
+  [ drawBlock a
+  , drawBlock b
+  , drawBlock c
+  , drawBlock d 
+  ]
 
 -- | Рисуем тетрис.
--- FIXME: поправить отступы.
 drawTetris :: Gamestate-> Picture
-drawTetris (b, fs, s, t) = pictures
-  [ drawFigure (b, fs, s, t),
-   drawBoard b ,
-    drawScore t
+drawTetris (b, fs, s, t) = pictures 
+  [ drawFigure (b, fs, s, t)
+  , drawBoard b
+  , drawScore t 
   ]
 
 -- | Рисуем счет.
@@ -434,20 +435,15 @@ updateBoard :: Gamestate -> Board
 updateBoard (a, (fig : _), (_, _), _) = a ++ vectolist (figureToDraw fig)
 updateBoard _ = []
 
--- | На основании прошедшего времени меняет скорость полета фигур.
--- FIXME: эта функция ничего не делает?
-updateSpeed :: Time -> Speed -> Speed
-updateSpeed _ _ = 0
-
 -- | Аргумент функции 'play', обновляет состояние тетриса.
 -- С каждым кадром двигает фигуру вниз и пока здесь же проверяет,
 -- не достигла ли фигура нижней границы.
--- FIXME: форматировать охранные выражения и where как выше.
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris dt (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) | gameover = (genEmptyBoard, rest, (init_tact, 0), 0)
-                                                              | otherwise = newLevel (newTact (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) dt sp)
-                                                                 where
-                                                                   gameover = isGameOver (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e)
+updateTetris dt (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) 
+  | gameover  = (genEmptyBoard, rest, (init_tact, 0), 0)
+  | otherwise = newLevel (newTact (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) dt sp)
+  where
+    gameover = isGameOver (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e)
 updateTetris _ gs = gs
 
 -- ===========================================
@@ -462,27 +458,28 @@ boardProfit :: Board -> Int
 boardProfit b = 2000 + 10000 * (numberDeletes b) - 100 * (numberHoles b) - 10 * ((avgBoardHeight b) - (boardHeight b))
 
 -- | Функция сравнения двух элементов доски (нужна для упорядочивания доски).
--- FIXME: поправить отступы.
 greater :: Coord -> Coord -> Bool
-greater (x1, y1, _) (x2, y2, _) | x1 > x2 = True
-                              | (x1 == x2) && (y1 < y2) = True
-                              | otherwise = False
+greater (x1, y1, _) (x2, y2, _) 
+  | x1 > x2 = True
+  | (x1 == x2) && (y1 < y2) = True
+  | otherwise = False
 
 -- | Сортирует доску по столбцам. Столбцы также отсортировываются.
--- FIXME: код длиннее 80 символов.
 sortBoard :: Board -> Board
-sortBoard []     = []
-sortBoard (brd : brds) = sortBoard (filter (\x -> greater x brd ) brds) ++ [brd] ++ sortBoard (filter (\x -> not (greater x brd)) brds)
+sortBoard []           = []
+sortBoard (brd : brds) = sortBoard (filter (\x -> greater x brd ) brds)
+                      ++ [brd]
+                      ++ sortBoard (filter (\x -> not (greater x brd)) brds)
 
 -- | Сравнивает, какой вариант лучше.
--- FIXME: поправить отступы.
 best :: Variant -> Variant -> Variant
-best (x1, y1, t1) (x2, y2, t2) | x1 >= x2 = (x1, y1, t1)
-                      | otherwise = (x2, y2, t2)
+best (x1, y1, t1) (x2, y2, t2) 
+  | x1 >= x2  = (x1, y1, t1)
+  | otherwise = (x2, y2, t2)
 
 -- | Выбирает наилучший вариант развития событий.
 bestVariant :: [Variant] -> Variant
-bestVariant [] = (0, -1, 0)
+bestVariant []               = (0, -1, 0)
 bestVariant ((y, x, t) : hs) = best (y, x, t) (bestVariant hs)
 
 -- | Высота доски. Имеется ввиду высочайшая точка доски.
@@ -493,11 +490,11 @@ boardHeight brds  = minimum (map (\(_, y, _) -> y) brds)
 avgBoardHeight :: Board -> Int
 avgBoardHeight b = div (sumBoardHeight b) 10
 
--- | Сумма высот столбцов доски.
+-- | Сумма высот столбцов доски (функция упорядочивает доску, а сама сумма считается в 'sumhofb').
 sumBoardHeight :: Board -> Int
 sumBoardHeight b = sumhofb (sortBoard b)
 
--- | FIXME: ???
+-- | Сумма высот столбцов доски (принимает упорядоченную доску, и считает сумму высот её столбцов).
 sumhofb :: Board -> Int
 sumhofb [] = 0
 sumhofb ((x1, y1, z1) : hs) = y1 + sumhofb (filter (\(x, _, _) -> not (x == x1)) ((x1, y1, z1) : hs))
@@ -506,12 +503,12 @@ sumhofb ((x1, y1, z1) : hs) = y1 + sumhofb (filter (\(x, _, _) -> not (x == x1))
 numberHoles :: Board -> Int
 numberHoles b = nh (sortBoard b)
 
--- | FIXME: ???
+-- | Сумма дырок в столбцах.
 nh :: Board -> Int
 nh [] = 0
 nh ((x1, y1, z1) : hs) = nhcolumn (filter (\(x, _, _) -> x == x1) ((x1, y1, z1) : hs))  + nh (filter (\(x, _, _) -> not (x == x1)) ((x1, y1, z1) : hs))
 
--- | FIXME: ???
+-- | Количество дырок в столбце.
 nhcolumn :: [Coord] -> Int
 nhcolumn [] = 0
 nhcolumn ((x1, y1, z1) : hs) = (div (screenHeight - y1) blockSize) - length ((x1, y1, z1) : hs)
@@ -542,7 +539,7 @@ bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) =
         gs = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
 bestStep _ = (0, 0, 0)
 
--- | Применяет функцию @f@ @n@ раз к сущности @а@.
+-- | Применяет функцию 'f' 'n' раз к сущности 'а'.
 apply :: (a -> a) -> Int -> a -> a
 apply _ 0 par = par
 apply f num par = apply f  (num - 1) (f par)
