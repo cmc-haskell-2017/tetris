@@ -50,11 +50,17 @@ type Time = Float
 
 -- | Состояние игры в текущий момент.
 -- Разделили доску и фигуру, чтобы при полете фигуры не мигала вся доска, также, чтобы было более оптимизировано.
--- @[Figure]@ — бесконечный список фигур, в текущем состоянии берем первый элемент списка
+-- '[Figure]' — бесконечный список фигур, в текущем состоянии берем первый элемент списка
 --
--- FIXME : нужно переписать с использованием data и полями.
-type Gamestate = (Board,  [Figure], (Speed, Time), Score)
-
+data Gamestate = Gamestate
+  { board :: Board
+  , curfig :: Figure
+  , figures :: [Figure]
+  , speed :: Speed
+  , time :: Time
+  , score :: Score
+  }
+  
 -- | Скорость (FIXME : в каких единицах?).
 type Speed = Float
 
@@ -113,7 +119,7 @@ genEmptyBoard = [(bs * 9, bs * 20, 0), (bs * 8, bs * 20, 0), (bs * 7, bs * 20, 0
 
 -- | Генерируем игровую вселенную (пустая доска, бесконечный список фигур, начальные скорость, время и счет).
 genUniverse :: StdGen -> Gamestate
-genUniverse g = (genEmptyBoard, initFigures g, (init_tact, 0), 0)
+genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_tact, time = 0, score = 0}
 
 -- =========================================
 -- * Перемещения фигур.
@@ -127,27 +133,21 @@ type BlockedFigure = (Coord, Coord, Coord, Coord)
 -- FIXME: после нормального форматирования кода видно, что все правые части отличаются лишь в одном месте;
 -- попробуйте упростить эту функцию за счёт выделения общей части.
 turn :: Gamestate -> Gamestate
-turn (a, (Figure t DUp c) : rest, d, e)
-  | collide1  = (a, (Figure t DUp c)    : rest, d, e)
-  | otherwise = (a, (Figure t DRight c) : rest, d, e)
-  where
-    collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
-turn (a, (Figure t DRight c) : rest, d, e)
-  | collide2  = (a, (Figure t DRight c) : rest, d, e)
-  | otherwise = (a, (Figure t DDown c)  : rest, d, e)
-  where
-    collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
-turn (a, (Figure t DDown c) : rest, d, e)
-  | collide3  = (a, (Figure t DDown c) : rest, d, e)
-  | otherwise = (a, (Figure t DLeft c) : rest, d, e)
-  where
-    collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
-turn (a, (Figure t DLeft c) : rest, d, e)
-  | collide4  = (a, (Figure t DLeft c) : rest, d, e)
-  | otherwise = (a, (Figure t DUp c)   : rest, d, e)
-  where
-    collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
-turn gs = gs
+turn gs
+  | collideturn (board gs) (curfig gs) = gs
+  | otherwise = gs {curfig = turnfigure . curfig $ gs}
+
+collideturn :: Board -> Figure -> Bool
+collideturn b (Figure t DUp    c) = collidesFigure (figureToDraw (Figure t DRight c)) b
+collideturn b (Figure t DRight c) = collidesFigure (figureToDraw (Figure t DDown  c)) b
+collideturn b (Figure t DDown  c) = collidesFigure (figureToDraw (Figure t DLeft  c)) b
+collideturn b (Figure t DLeft  c) = collidesFigure (figureToDraw (Figure t DUp    c)) b
+
+turnfigure :: Figure -> Figure
+turnfigure (Figure t DUp    c) = Figure t DRight c
+turnfigure (Figure t DRight c) = Figure t DDown  c
+turnfigure (Figure t DDown  c) = Figure t DLeft  c
+turnfigure (Figure t DLeft  c) = Figure t DUp    c
 
 -- | Готовим фигуры к отрисовке.
 figureToDraw :: Figure -> BlockedFigure
@@ -216,21 +216,25 @@ startGame  _ =  0
 
 -- | Шаг влево.
 moveLeft :: Gamestate -> Gamestate
-moveLeft (a, ((Figure s t (b, c, z)) : rest), d, e)
-  | collide   = (a, ((Figure s t (b, c, z))             : rest), d, e)
-  | otherwise = (a, ((Figure s t (b - blockSize, c, z)) : rest), d, e)
+moveLeft gs
+  | collide   = gs
+  | otherwise = gs {curfig = moveLeftFigure . curfig $ gs}
   where
-    collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize, c, z))) a
-moveLeft gs = gs
+    collide = collidesFigureSides (figureToDraw (moveLeftFigure (curfig gs))) (board gs)
+
+moveLeftFigure :: Figure -> Figure
+moveLeftFigure (Figure s t (b, c, z)) = (Figure s t (b - blockSize, c, z))
 
 -- | Шаг вправо.
 moveRight :: Gamestate -> Gamestate
-moveRight (a, (Figure s t (b, c, z)) : rest, d, e) 
-  | collide   = (a, ((Figure s t (b, c, z))             : rest), d, e)
-  | otherwise = (a, ((Figure s t (b + blockSize, c, z)) : rest), d, e)
+moveRight gs
+  | collide = gs
+  | otherwise = gs {curfig = moveRightFigure . curfig $ gs}
   where
-    collide  = collidesFigureSides (figureToDraw (Figure s t (b + blockSize, c, z))) a
-moveRight gs = gs
+    collide = collidesFigureSides (figureToDraw (moveRightFigure (curfig gs))) (board gs)
+
+moveRightFigure :: Figure -> Figure
+moveRightFigure (Figure s t (b, c, z)) = (Figure s t (b + blockSize, c, z))
 
 -- | Проверка, пересекается ли блок (FIXME: с чем?).
 collidesBlock :: Coord -> Bool
@@ -264,26 +268,25 @@ collidesBlockUp (a, b, z) ((_, brdb, _) : brds)
 
 -- | Пересекает ли фигура доску или границы?
 collidesFigure :: BlockedFigure -> Board -> Bool
-collidesFigure (a, b, c, d) board = or
-  [ collidesFigureSides (a, b, c, d) board
-  , collidesFigureDown  (a, b, c, d) board ]
+collidesFigure (a, b, c, d) brd = or
+  [ collidesFigureSides (a, b, c, d) brd
+  , collidesFigureDown  (a, b, c, d) brd ]
 
 -- | Проверка (FIXME: чего?)
 collidesFigureSides :: BlockedFigure -> Board -> Bool
-collidesFigureSides (a, b, c, d) board 
-  | (collidesBlockSides a board) || (collidesBlockSides b board) || (collidesBlockSides c board) || (collidesBlockSides d board) = True
+collidesFigureSides (a, b, c, d) brd 
+  | (collidesBlockSides a brd) || (collidesBlockSides b brd) || (collidesBlockSides c brd) || (collidesBlockSides d brd) = True
   | otherwise = False
 
 -- | Проверка, что фигура касается снизу доски или поля.
 collidesFigureDown :: BlockedFigure -> Board -> Bool
-collidesFigureDown (a, b, c, d) board 
-  | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) || (collidesBlockDown d board) = True
+collidesFigureDown (a, b, c, d) brd 
+  | (collidesBlockDown a brd) || (collidesBlockDown b brd) || (collidesBlockDown c brd) || (collidesBlockDown d brd) = True
   | otherwise = False
 
--- | Проверка, закончилась ли игра.
+-- | Проверка, закончилась ли игра. (Следующая фигура пересеклась с доской)
 isGameOver :: Gamestate -> Bool
-isGameOver (a, (_ : f2 : _), _, _) = collidesFigureDown (figureToDraw f2) a
-isGameOver _ = True
+isGameOver gs = collidesFigureDown (figureToDraw (head . figures $ gs)) (board gs)
 
 -- | Сортируем строки.
 sortRows :: Board -> Board
@@ -302,12 +305,14 @@ deleteRows ((brda, brdb, z) : brds)
 
 -- | При нажатии клавиши "вниз" роняет фигуру.
 dropit :: Gamestate -> Int -> Gamestate
-dropit (a, ((Figure sha dir (b, c, z)) : rest), d, e) pts  
-  | collide   =        (a, ((Figure sha dir (b, c,             z)) : rest), d, e + (div pts blockSize))
-  | otherwise = dropit (a, ((Figure sha dir (b, c + blockSize, z)) : rest), d, e) pts
+dropit gs pts
+  | collide   = gs {score = score gs + (div pts blockSize)}
+  | otherwise = dropit gs {curfig = moveDownFigure . curfig $ gs} pts
   where
-    collide = collidesFigureDown (figureToDraw (Figure sha dir (b, c + blockSize, z))) a
-dropit gs _ = gs
+    collide = collidesFigureDown (figureToDraw (moveDownFigure . curfig $ gs)) (board gs)
+
+moveDownFigure :: Figure -> Figure
+moveDownFigure (Figure sha dir (b, c, z)) = (Figure sha dir (b, c + blockSize, z))
 
 -- | Рисуем доску.
 drawBoard :: Board  -> Picture
@@ -383,8 +388,7 @@ drawBlock  (b, c, _) =  pictures [ translate (-w) h (scale  1 1 (pictures
 
 -- | Рисуем фигуру.
 drawFigure :: Gamestate  ->  Picture
-drawFigure (_, (f : _), _, _) = drawBlockedFigure  (figureToDraw f)
-drawFigure _ = blank
+drawFigure gs = drawBlockedFigure (figureToDraw . curfig $ gs)
 
 -- | Рисуем блоки фигуры.
 drawBlockedFigure :: BlockedFigure -> Picture
@@ -397,18 +401,18 @@ drawBlockedFigure ((a, b, c, d)) = pictures
 
 -- | Рисуем тетрис.
 drawTetris :: Gamestate-> Picture
-drawTetris (b, fs, s, t) = pictures 
-  [ drawFigure (b, fs, s, t)
-  , drawBoard b
-  , drawScore t 
+drawTetris gs = pictures
+  [ drawFigure gs
+  , drawBoard . board $ gs
+  , drawScore . score $ gs
   ]
 
 -- | Рисуем счет.
 drawScore :: Score -> Picture
-drawScore score = translate (-w) h (scale 30 30 (pictures
+drawScore scr = translate (-w) h (scale 30 30 (pictures
   [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])             -- белая рамка
   , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])      -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
+  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show scr))))    -- красный счёт
   ]))
   where
     w = fromIntegral screenWidth  / 2
@@ -436,19 +440,15 @@ vectolist (a, b, c, d) = [a, b, c, d]
 
 -- | Добавляет в доску упавшую фигуру.
 updateBoard :: Gamestate -> Board
-updateBoard (a, (fig : _), (_, _), _) = a ++ vectolist (figureToDraw fig)
-updateBoard _ = []
+updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
 
 -- | Аргумент функции 'play', обновляет состояние тетриса.
 -- С каждым кадром двигает фигуру вниз и пока здесь же проверяет,
 -- не достигла ли фигура нижней границы.
 updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris dt (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) 
-  | gameover  = (genEmptyBoard, rest, (init_tact, 0), 0)
-  | otherwise = newLevel (newTact (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e) dt sp)
-  where
-    gameover = isGameOver (a, (Figure sha dir (b, c, cl) : rest), (sp, ti), e)
-updateTetris _ gs = gs
+updateTetris dt gs
+  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_tact, score = 0, time = 0}
+  | otherwise = newLevel (newTact gs dt (speed gs))
 
 -- ===========================================
 -- * Искусственный интеллект
@@ -545,11 +545,7 @@ better v1 v2
 -- Возвращает 'Variant' (профит, смещение от центра, количество поворотов).
 -- Отрицательное смещение - двигаемся влево. Иначе - вправо.
 bestStep :: Gamestate -> Variant
-bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) =
-   bestVariant (sortVariants [ genVariant gs dx r | dx <- [-5..4], r <- [0..3] ])
-      where
-        gs = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-bestStep _ = Variant {profit = 0, offset = 0, turns = 0}
+bestStep gs = bestVariant (sortVariants [ genVariant gs dx r | dx <- [-5..4], r <- [0..3] ])
 
 -- | Применяет функцию 'f' 'n' раз к сущности 'а'.
 apply :: (a -> a) -> Int -> a -> a
@@ -559,29 +555,30 @@ apply f num par = apply f  (num - 1) (f par)
 -- | Генерирует вариант развития событий.
 genVariant :: Gamestate -> Int -> Int -> Variant
 genVariant gs dx r = Variant
-  { profit = boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight - f2)))
+  { profit = boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight - (f2 (curfig gs)))))
   , offset = dx
   , turns = r
   } 
   where
-    (_, Figure _ _ (_, f2, _) : _, _, _) = gs
     rot = apply turn r
     move
       | dx > 0    = apply moveRight dx
       | otherwise = apply moveLeft (abs dx)
 
+f2 :: Figure -> Int
+f2 (Figure _ _ (_, res, _)) = res
+
 -- | в 'newTact' вызывается 'makeStep' 4 раза. Т.е ИИ делает 4 хода в такт.
 makeStep :: Gamestate -> Gamestate
-makeStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-  | needturn = turn (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-  | needleft = moveLeft (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-  | needright = moveRight (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-  | otherwise   = dropit (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) (screenHeight - f2)
+makeStep gs
+  | needturn  = turn      gs
+  | needleft  = moveLeft  gs
+  | needright = moveRight gs
+  | otherwise = dropit    gs (screenHeight - (f2 . curfig $ gs))
     where
-      needturn = turns (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
-      needleft = offset (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) < 0
-      needright = offset (bestStep (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)) > 0
-makeStep gs = gs
+      needturn  = turns  (bestStep gs) > 0
+      needleft  = offset (bestStep gs) < 0
+      needright = offset (bestStep gs) > 0
 
 -- ===========================================
 -- * Время
@@ -589,52 +586,52 @@ makeStep gs = gs
 
 -- | Новый такт.
 newTact :: Gamestate -> Float -> Float -> Gamestate
-newTact (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s) dt tact
-  | paused = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s)
-  | new && collides = (deleteRows (sortRows (updateBoard (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti), s))), rest, (sp, ti), s + 1)
-  | new = newTact (makeStep(makeStep(makeStep(makeStep (b, (Figure sha dir (f1, f2 + blockSize, f3) : rest), (sp, 0), s))))) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti + dt + tact * 0.3), s)
-  | otherwise = (b, (Figure sha dir (f1, f2, f3) : rest), (sp, ti + dt), s)
-                                        where
-                                          new = ti + dt >= tact
-                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1, f2 + blockSize, f3))) b
-                                          paused = sp < 0
-newTact gs _ _ = gs
+newTact gs dt tact
+  | paused = gs
+  | new && collides = gs {board = deleteRows . sortRows . updateBoard $ gs, curfig = head (figures gs), figures = tail . figures $ gs, score = score gs + 1 }
+  | new = newTact (makeStep(makeStep(makeStep(makeStep gs {curfig = moveDownFigure (curfig gs), time = 0})))) (dt + (time gs) - tact) tact
+  | collides = gs {time = time gs + dt + tact * 0.3}
+  | otherwise = gs {time = time gs + dt}
+  where
+    new = time gs + dt >= tact
+    collides =  collidesFigureDown (figureToDraw . moveDownFigure . curfig $ gs) (board gs)
+    paused = speed gs < 0
 
 -- | Увеличивает скорость падения фигур, в зависимости от количества набранных очков.
 newLevel :: Gamestate -> Gamestate
-newLevel (b, (Figure sha dir (f1, f2, f3)) : rest, (sp, ti), s)
-  | l5 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.1, ti), s)
-  | l4 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.15, ti), s)
-  | l3 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.2, ti), s)
-  | l2 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.25, ti), s)
-  | l2 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.3, ti), s)
-  | l1 = (b, (Figure sha dir (f1, f2, f3)) : rest, (signum(sp) * 0.4, ti), s)
-  | otherwise = (b, (Figure sha dir (f1, f2, f3)) : rest, (sp, ti), s)
-        where
-          l5 = s >= 5000
-          l4 = s >= 3000 && s <= 5000
-          l3 = s >= 2000 && s <= 3000
-          l2 = s >= 1500 && s <= 2000
-          l1 = s >= 1000 && s <= 1500
-newLevel gs = gs
+newLevel gs
+  | l5 = gs {speed = signum(speed gs) * 0.1} 
+  | l4 = gs {speed = signum(speed gs) * 0.15}
+  | l3 = gs {speed = signum(speed gs) * 0.2}
+  | l2 = gs {speed = signum(speed gs) * 0.25}
+  | l2 = gs {speed = signum(speed gs) * 0.3}
+  | l1 = gs {speed = signum(speed gs) * 0.4}
+  | otherwise = gs
+  where
+    l5 = score gs >= 5000
+    l4 = score gs >= 3000 && (score gs) <= 5000
+    l3 = score gs >= 2000 && (score gs) <= 3000
+    l2 = score gs >= 1500 && (score gs) <= 2000
+    l1 = score gs >= 1000 && (score gs) <= 1500
 
 -- | Аргумент функции 'play', которая говорит, что делает каждая клавиша.
 handleTetris :: Event -> Gamestate -> Gamestate
 
-handleTetris (EventKey (Char 'l') Down _ _) (a, (Figure sha dir (b, c, z) : rest), d, e) = moveRight (a, (Figure sha dir (b, c, z) : rest), d, e)
+
+
+handleTetris (EventKey (Char 'l') Down _ _) gs = moveRight gs
 handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  (a, (Figure sha dir (b, c, z) : rest), d, e)  = moveLeft (a, (Figure sha dir (b, c, z) : rest), d, e)
+handleTetris (EventKey (Char 'j') Down _ _)  gs  = moveLeft gs
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a, (Figure sha dir (b, c, z) : rest), d, e)  = dropit (a, (Figure sha dir (b, c, z) : rest), d, e) (screenHeight - c)
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs  = dropit gs (screenHeight - (f2 . curfig $ gs))
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'k') Down _ _ ) (a, (Figure sha dir (b, c, z) : rest), d, e) = turn (a, (Figure sha dir (b, c, z) : rest), d, e)
+handleTetris (EventKey (Char 'k') Down _ _ ) gs = turn gs
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'p') Down _ _ ) (a, (Figure sha dir (b, c, z) : rest), (sp, ti), e) = (a, (Figure sha dir (b, c, z) : rest), (- sp, ti), e)
+handleTetris (EventKey (Char 'p') Down _ _ ) gs = gs {speed = - (speed gs)}
 handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
 handleTetris  _ t = t
