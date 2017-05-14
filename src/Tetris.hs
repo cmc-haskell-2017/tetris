@@ -34,9 +34,9 @@ type Board = [Coord]
 
 -- | Вариант развития событий для хода ИИ (профит, смещение, количество поворотов).
 data Variant = Variant 
-  { profit :: Int  -- ^ Выгода хода
-  , offset :: Int  -- ^ Смещение
-  , turns  :: Int  -- ^ Количество поворотов
+  { profit :: Int  -- ^ Выгода хода.
+  , offset :: Int  -- ^ Смещение.
+  , turns  :: Int  -- ^ Количество поворотов.
   }
 
 -- | Счёт.
@@ -44,12 +44,12 @@ type Score = Int
 
 -- | Координаты блока x, y и его цвет clr.
 data Coord = Coord 
-  { x   :: Int  -- ^ Координата x
-  , y   :: Int  -- ^ Координата y
-  , clr :: Int  -- ^ Цвет блока
+  { x   :: Int  -- ^ Координата x.
+  , y   :: Int  -- ^ Координата y.
+  , clr :: Int  -- ^ Цвет блока.
   }
 
--- | Время прошедшее с прошлого такта, сравнивается со скоростью для обновления такта
+-- | Время прошедшее с прошлого такта, сравнивается со скоростью для обновления такта.
 type Time = Float
 
 -- | Состояние игры в текущий момент.
@@ -65,7 +65,7 @@ data Gamestate = Gamestate
   , score   :: Score    -- ^ Счет игрока.
   }
   
--- | Скорость (время между тактами => чем меньше, тем быстрее игра)
+-- | Скорость (время между тактами => чем меньше, тем быстрее игра).
 type Speed = Float
 
 -- | Тип фигуры соответствует букве на которую фигура похожа.
@@ -83,9 +83,6 @@ data Direction
   | DLeft  -- ^ Фигура направелена влево.
   | DRight -- ^ Фигура направелена вправо.
   deriving(Eq, Show)
-
---(==) :: Coord -> Coord -> Bool
---a == b = (x a == x b ) && (y a == y b ) && (clr a == clr b )
 
 -- | Фигура определяется типом, направлением, координатами верхнего левого блока.
 data Figure = Figure FigureType Direction Coord
@@ -450,18 +447,6 @@ drawScore scr = translate (-w) h (scale 30 30 (pictures
 -- * Просчёт кадров (обновление)
 -- =========================================
 
-
--- Проверяет, достигла ли нижняя часть фигуры нижней
--- границы доски или другой фигуры :
--- Пока она реализована в updateTetris
-
--- Проверяет, не выходит ли правая или левая часть фигуры за правую или
--- левую часть доски соответственно
--- пока реализована в обраюотчиках клавиш
-
--- Делает пустые блоки доски, на в которых находится фигура заполненными,
--- вызываем ее после падения фигуры
-
 -- | Преобразует вектор координат в список.
 vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
 vectolist (a, b, c, d) = [a, b, c, d]
@@ -655,22 +640,20 @@ newLevel gs
 -- | Аргумент функции 'play', которая говорит, что делает каждая клавиша.
 handleTetris :: Event -> Gamestate -> Gamestate
 
-
-
 handleTetris (EventKey (Char 'l') Down _ _) gs = moveRight gs
-handleTetris (EventKey (Char 'l') Up _ _) t = t
+handleTetris (EventKey (Char 'l') Up _ _)   t  = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  gs  = moveLeft gs
-handleTetris (EventKey (Char 'j') Up _ _)  t  = t
+handleTetris (EventKey (Char 'j') Down _ _)  gs = moveLeft gs
+handleTetris (EventKey (Char 'j') Up _ _)    t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs  = dropit gs (screenHeight - (heightFigure . curfig $ gs))
-handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs = dropit gs (screenHeight - (heightFigure . curfig $ gs))
+handleTetris(EventKey (SpecialKey KeySpace) Up _ _ )   t  = t
 
 handleTetris (EventKey (Char 'k') Down _ _ ) gs = turn gs
-handleTetris (EventKey (Char 'k') Up _ _ ) t = t
+handleTetris (EventKey (Char 'k') Up _ _ )   t  = t
 
 handleTetris (EventKey (Char 'p') Down _ _ ) gs = gs {speed = - (speed gs)}
-handleTetris (EventKey (Char 'p') Up _ _ ) t = t
+handleTetris (EventKey (Char 'p') Up _ _ )   t  = t
 
 handleTetris  _ t = t
 
