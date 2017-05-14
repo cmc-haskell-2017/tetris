@@ -17,7 +17,7 @@ run = do
 -- * Типы
 -- =========================================
 
--- | FIXME: ???
+-- | Сколько кадров в секунду отрисовывается
 glob_fps :: Int
 glob_fps = 60
 
@@ -25,9 +25,9 @@ glob_fps = 60
 blockSize :: Int
 blockSize = 30
 
--- | Инициализация такта (FIXME : почему это время?).
-init_tact :: Time
-init_tact = 0.7
+-- | Начальная скорость падения фигуры
+init_speed :: Speed
+init_speed = 0.7
 
 -- | Доска — список координат упавших блоков.
 type Board = [Coord]
@@ -94,15 +94,17 @@ screenHeight = 600
 -- =========================================
 
 -- | На вход принимается случайное число от 0 до 6, которое определяет фигуру.
--- FIXME: вынести общую часть.
 genFigure :: Int -> Figure
-genFigure a | a == 0    =  Figure O DUp (div screenWidth 2, blockSize * 2, 0)
-            | a == 1    =  Figure I DUp (div screenWidth 2, blockSize * 2, 1)
-            | a == 2    =  Figure T DUp (div screenWidth 2, blockSize * 2, 2)
-            | a == 3    =  Figure J DUp (div screenWidth 2, blockSize * 2, 3)
-            | a == 4    =  Figure L DUp (div screenWidth 2, blockSize * 2, 4)
-            | a == 5    =  Figure S DUp (div screenWidth 2, blockSize * 2, 5)
-            | otherwise =  Figure Z DUp (div screenWidth 2, blockSize * 2, 6)
+genFigure a
+  | a == 0    = Figure O DUp startpos
+  | a == 1    = Figure I DUp startpos
+  | a == 2    = Figure T DUp startpos
+  | a == 3    = Figure J DUp startpos
+  | a == 4    = Figure L DUp startpos
+  | a == 5    = Figure S DUp startpos
+  | otherwise = Figure Z DUp startpos
+  where
+    startpos = (div screenWidth 2, blockSize * 2, a)
 
 -- | Генерируем бесконечный список из случайных фигур.
 initFigures :: StdGen -> [Figure]
@@ -111,15 +113,13 @@ initFigures g = map genFigure (randomRs range g)
     range = (0, 6)
 
 -- | Пустая доска.
--- FIXME : упростить код при помощи map.
 genEmptyBoard :: Board
-genEmptyBoard = [(bs * 9, bs * 20, 0), (bs * 8, bs * 20, 0), (bs * 7, bs * 20, 0), (bs * 6, bs * 20, 0), (bs * 5, bs * 20, 0), (bs * 4, bs * 20, 0),
-  (3 * bs, bs * 20, 0), (2 * bs, bs * 20, 0), (1 * bs, bs * 20, 0)]
-   where bs = blockSize
+genEmptyBoard = [ (\x -> (bs * x, bs * 20, 0) ) dx | dx <- [1..9] ]
+  where bs = blockSize
 
 -- | Генерируем игровую вселенную (пустая доска, бесконечный список фигур, начальные скорость, время и счет).
 genUniverse :: StdGen -> Gamestate
-genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_tact, time = 0, score = 0}
+genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_speed, time = 0, score = 0}
 
 -- =========================================
 -- * Перемещения фигур.
@@ -130,24 +130,23 @@ type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 -- | Поворачивает фигуру : функция смотрит, какая ей дана фигура,
 -- и вычисляет расстояние до края доски и на основании этой информации поворачивает ее (если это можно сделать).
--- FIXME: после нормального форматирования кода видно, что все правые части отличаются лишь в одном месте;
--- попробуйте упростить эту функцию за счёт выделения общей части.
 turn :: Gamestate -> Gamestate
 turn gs
   | collideturn (board gs) (curfig gs) = gs
   | otherwise = gs {curfig = turnfigure . curfig $ gs}
 
 collideturn :: Board -> Figure -> Bool
-collideturn b (Figure t DUp    c) = collidesFigure (figureToDraw (Figure t DRight c)) b
-collideturn b (Figure t DRight c) = collidesFigure (figureToDraw (Figure t DDown  c)) b
-collideturn b (Figure t DDown  c) = collidesFigure (figureToDraw (Figure t DLeft  c)) b
-collideturn b (Figure t DLeft  c) = collidesFigure (figureToDraw (Figure t DUp    c)) b
+collideturn b (Figure t d c) = collidesFigure (figureToDraw (Figure t (nextdirection d) c)) b
 
 turnfigure :: Figure -> Figure
-turnfigure (Figure t DUp    c) = Figure t DRight c
-turnfigure (Figure t DRight c) = Figure t DDown  c
-turnfigure (Figure t DDown  c) = Figure t DLeft  c
-turnfigure (Figure t DLeft  c) = Figure t DUp    c
+turnfigure (Figure t d c) = Figure t (nextdirection d) c
+
+nextdirection :: Direction -> Direction
+nextdirection DUp    = DRight
+nextdirection DRight = DDown
+nextdirection DDown  = DLeft
+nextdirection DLeft  = DUp
+
 
 -- | Готовим фигуры к отрисовке.
 figureToDraw :: Figure -> BlockedFigure
@@ -159,47 +158,40 @@ figureToDraw (Figure L d c) = figureToDrawL (Figure L d c)
 figureToDraw (Figure S d c) = figureToDrawS (Figure S d c)
 figureToDraw (Figure Z d c) = figureToDrawZ (Figure Z d c)
 
--- FIXME: чтобы у функций ниже не было ненужных уравнений, они не должны зависеть от типа фигуры.
 -- FIXME: функции ниже не влезают в ограничение 80 символов на строку
 
 -- | FIXME: ???
 figureToDrawO :: Figure -> BlockedFigure
-figureToDrawO (Figure O _ (x, y, z)) = ((x, y, z), (x + blockSize, y, z), (x, y - blockSize, z), (x + blockSize, y - blockSize, z))
-figureToDrawO _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))  -- FIXME: убрать это уравнение
+figureToDrawO (Figure _ _ (x, y, z)) = ((x, y, z), (x + blockSize, y, z), (x, y - blockSize, z), (x + blockSize, y - blockSize, z))
 
 -- | FIXME: ???
 figureToDrawI :: Figure -> BlockedFigure
-figureToDrawI (Figure I d (x, y, z)) | (d == DUp) || (d == DDown) = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x, y - 2 * blockSize, z))
+figureToDrawI (Figure _ d (x, y, z)) | (d == DUp) || (d == DDown) = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x, y - 2 * blockSize, z))
                   | otherwise = ((x - blockSize, y, z), (x, y, z), (x + blockSize, y, z), (x + 2 * blockSize, y, z))
-figureToDrawI _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
 
 -- | FIXME: ???
 figureToDrawZ :: Figure -> BlockedFigure
-figureToDrawZ (Figure Z d (x, y, z)) | (d == DUp) || (d == DDown) = ((x - blockSize, y - blockSize, z), (x - blockSize, y, z), (x, y, z), (x, y + blockSize, z))
+figureToDrawZ (Figure _ d (x, y, z)) | (d == DUp) || (d == DDown) = ((x - blockSize, y - blockSize, z), (x - blockSize, y, z), (x, y, z), (x, y + blockSize, z))
                     | otherwise = ((x - blockSize, y, z), (x, y, z), (x, y - blockSize, z), (x + blockSize, y - blockSize, z))
-figureToDrawZ _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
 
 -- | FIXME: ???
 figureToDrawS :: Figure -> BlockedFigure
-figureToDrawS (Figure S d (x, y, z)) | (d == DUp) || (d == DDown) = ((x - blockSize, y + blockSize, z), (x - blockSize, y, z), (x, y, z), (x, y - blockSize, z))
+figureToDrawS (Figure _ d (x, y, z)) | (d == DUp) || (d == DDown) = ((x - blockSize, y + blockSize, z), (x - blockSize, y, z), (x, y, z), (x, y - blockSize, z))
                     | otherwise = ((x - blockSize, y, z), (x, y, z), (x, y + blockSize, z), (x + blockSize, y + blockSize, z))
-figureToDrawS _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
 
 -- | FIXME: ???
 figureToDrawJ :: Figure -> BlockedFigure
-figureToDrawJ (Figure J d (x, y, z)) | d == DDown = ((x - blockSize, y - blockSize, z), (x, y - blockSize, z), (x, y, z), (x, y + blockSize, z))
+figureToDrawJ (Figure _ d (x, y, z)) | d == DDown = ((x - blockSize, y - blockSize, z), (x, y - blockSize, z), (x, y, z), (x, y + blockSize, z))
                  | d == DUp = ((x, y - blockSize, z), (x, y, z), (x, y + blockSize, z), (x + blockSize, y + blockSize, z))
                  | d == DRight = ((x - blockSize, y, z), (x, y, z), (x + blockSize, y, z), (x + blockSize, y - blockSize, z))
                  | otherwise = ((x - blockSize, y + blockSize, z), (x - blockSize, y, z), (x, y, z), (x + blockSize, y, z))
-figureToDrawJ _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
 
 -- | FIXME: ???
 figureToDrawL :: Figure -> BlockedFigure
-figureToDrawL (Figure L d (x, y, z)) | d == DDown = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x + blockSize, y - blockSize, z))
+figureToDrawL (Figure _ d (x, y, z)) | d == DDown = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x + blockSize, y - blockSize, z))
                  | d == DUp = ((x, y - blockSize, z), (x, y, z), (x, y + blockSize, z), (x - blockSize, y + blockSize, z))
                  | d == DRight = ((x - blockSize, y, z), (x, y, z), (x + blockSize, y, z), (x + blockSize, y + blockSize, z))
                  | otherwise = ((x - blockSize, y - blockSize, z), (x - blockSize, y, z), (x, y, z), (x + blockSize, y, z))
-figureToDrawL _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
 
 -- | FIXME: ???
 figureToDrawT :: Figure -> BlockedFigure
@@ -208,11 +200,6 @@ figureToDrawT (Figure T d (x, y, z)) | d == DDown = ((x - blockSize, y, z), (x, 
                  | d == DRight = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x + blockSize, y, z))
                  | otherwise = ((x, y + blockSize, z), (x, y, z), (x, y - blockSize, z), (x - blockSize, y, z))
 figureToDrawT _ = ((0, 0, 0), (0, 0, 0), (0, 0, 0), (0, 0, 0))
-
--- | Принимает пустую доску, моделирует всю игру, послеокончания возвращает счет.
--- FIXME: зачем нужна эта функция? комментарий не соответствует реализации.
-startGame :: Board -> Score
-startGame  _ =  0
 
 -- | Шаг влево.
 moveLeft :: Gamestate -> Gamestate
@@ -294,14 +281,30 @@ sortRows []     = []
 sortRows ((brda, brdb, z) : brds) = sortRows (filter (\(_, y, _) -> y > brdb) brds) ++ [(brda, brdb, z)] ++ sortRows (filter (\(_, y, _) -> y <= brdb) brds)
 
 -- | Удалям заполненные строки.
--- FIXME: эту функцию невозможно прочитать!
 deleteRows :: Board -> Board
 deleteRows [] = []
-deleteRows ((brda, brdb, z) : brds) 
-  | (length (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) == 10)  =  (deleteRows (map (\(x, y, buf) -> (x, y + blockSize, buf)) (filter (\(_, y, _) -> y < brdb) l)) ++ (filter (\(_, y, _) -> y > brdb) l))
-  | otherwise = (filter (\(_, y, _) -> brdb == y) ((brda, brdb, z) : brds)) ++ (deleteRows  (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds)))                  -----   ToDo : Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
+deleteRows ((x, y, z) : brds)
+  | isFullRow (row brd y) = deleteRows . boardMoveDown $ (upperRows brd y) ++ (lowerRows brd y)
+  | otherwise = (row brd y) ++ (deleteRows (upperRows brd y))
   where 
-    l = (filter (\(_, y, _) -> brdb /= y) ((brda, brdb, z) : brds))
+    brd = ((x, y, z) : brds)
+
+upperRows :: Board -> Int -> Board
+upperRows brd scope = (filter (\(_, y, _) -> y < scope) brd)
+
+lowerRows :: Board -> Int -> Board
+lowerRows brd scope = (filter (\(_, y, _) -> y > scope) brd)
+
+
+boardMoveDown :: Board -> Board
+boardMoveDown [] = []
+boardMoveDown ((x, y, z) : brd) = (x, y + blockSize, z) : boardMoveDown brd
+
+row :: Board -> Int -> [Coord]
+row b n = (filter (\(_, y, _) -> n == y) b)
+
+isFullRow :: [Coord] -> Bool
+isFullRow r = (length r) == 10
 
 -- | При нажатии клавиши "вниз" роняет фигуру.
 dropit :: Gamestate -> Int -> Gamestate
@@ -447,7 +450,7 @@ updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
 -- не достигла ли фигура нижней границы.
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt gs
-  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_tact, score = 0, time = 0}
+  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_speed, score = 0, time = 0}
   | otherwise = newLevel (newTact gs dt (speed gs))
 
 -- ===========================================
@@ -519,7 +522,7 @@ nhcolumn ((x1, y1, z1) : hs) = (div (screenHeight - y1) blockSize) - length ((x1
 
 -- | Количество удаленных строк, после сделанного хода.
 numberDeletes :: Board -> Int
-numberDeletes b = (boardHeight (deleteRows (sortRows b))) - (boardHeight b)
+numberDeletes b = (boardHeight . deleteRows . sortRows $ b) - (boardHeight b)
 
 -- | Сортируем варианты по профиту, количеству поворотова, смещению.
 sortVariants :: [Variant] -> [Variant]
@@ -534,12 +537,12 @@ better v1 v2
   | (p1 == p2) && (r1 == r2) && ((abs dx1) < (abs dx2)) = True
   | otherwise = False
   where
-    p1 = profit v1
-    p2 = profit v2
+    p1  = profit v1
+    p2  = profit v2
     dx1 = offset v1 
     dx2 = offset v2
-    r1 = turns v1
-    r2 = turns v2
+    r1  = turns v1
+    r2  = turns v2
 
 -- | Анализирует 'Gamestate'.
 -- Возвращает 'Variant' (профит, смещение от центра, количество поворотов).
