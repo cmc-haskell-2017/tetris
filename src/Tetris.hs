@@ -43,9 +43,13 @@ data Variant = Variant
 type Score = Int
 
 -- | Координаты блока x, y и его цвет clr.
-type Coord = (Int, Int, Int)  -- FIXME : нужны синонимы типов и/или data с полями вместо кортежа
+data Coord = Coord 
+  { x   :: Int  -- ^ Координата x
+  , y   :: Int  -- ^ Координата y
+  , clr :: Int  -- ^ Цвет блока
+  }
 
--- | Время (FIXME : в каких единицах?)
+-- | Время прошедшее с прошлого такта, сравнивается со скоростью для обновления такта
 type Time = Float
 
 -- | Состояние игры в текущий момент.
@@ -61,7 +65,7 @@ data Gamestate = Gamestate
   , score   :: Score    -- ^ Счет игрока.
   }
   
--- | Скорость (FIXME : в каких единицах?).
+-- | Скорость (время между тактами => чем меньше, тем быстрее игра)
 type Speed = Float
 
 -- | Тип фигуры соответствует букве на которую фигура похожа.
@@ -80,9 +84,12 @@ data Direction
   | DRight -- ^ Фигура направелена вправо.
   deriving(Eq, Show)
 
+--(==) :: Coord -> Coord -> Bool
+--a == b = (x a == x b ) && (y a == y b ) && (clr a == clr b )
+
 -- | Фигура определяется типом, направлением, координатами верхнего левого блока.
 data Figure = Figure FigureType Direction Coord
-  deriving(Eq, Show)
+  --deriving(Show)
 
 -- | Ширина экрана.
 screenWidth :: Int
@@ -107,7 +114,7 @@ genFigure a
   | a == 5    = Figure S DUp startpos
   | otherwise = Figure Z DUp startpos
   where
-    startpos = (div screenWidth 2, blockSize * 2, a)
+    startpos = Coord {x = div screenWidth 2, y = blockSize * 2, clr = a}
 
 -- | Генерируем бесконечный список из случайных фигур.
 initFigures :: StdGen -> [Figure]
@@ -117,7 +124,7 @@ initFigures g = map genFigure (randomRs range g)
 
 -- | Пустая доска.
 genEmptyBoard :: Board
-genEmptyBoard = [ (\x -> (bs * x, bs * 20, 0) ) dx | dx <- [1..9] ]
+genEmptyBoard = [ (\x1 -> Coord {x = bs * x1, y = bs * 20, clr = 0}) dx | dx <- [1..9] ]
   where bs = blockSize
 
 -- | Генерируем игровую вселенную (пустая доска, бесконечный список фигур, начальные скорость, время и счет).
@@ -167,62 +174,62 @@ figureToDraw (Figure Z d c) = figureToDrawZ (Figure Z d c)
 
 -- | Готовим квадрат к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawO :: Figure -> BlockedFigure
-figureToDrawO (Figure _ _ (x, y, z)) 
-  = ((x, y, z), (x + bs, y, z), (x, y - bs, z), (x + blockSize, y - bs, z))
+figureToDrawO (Figure _ _ c) 
+  = (c, c {x = x c + bs}, c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
   where
     bs = blockSize
 
 -- | Готовим палку к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawI :: Figure -> BlockedFigure
-figureToDrawI (Figure _ d (x, y, z)) 
-  | (d == DUp) || (d == DDown) = ((x, y + bs, z), (x, y, z), (x, y - bs, z), (x, y - 2 * bs, z))
-  | otherwise                  = ((x - bs, y, z), (x, y, z), (x + bs, y, z), (x + 2 * bs, y, z))
+figureToDrawI (Figure _ d c) 
+  | (d == DUp) || (d == DDown) = (c {y = y c + bs}, c, c {y = y c - bs}, c {y = y c - 2*bs})
+  | otherwise                  = (c {x = x c - bs}, c, c {x = x c + bs}, c {x = x c + 2*bs})
   where
     bs = blockSize
 
 -- | Готовим левый зигзаг к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawZ :: Figure -> BlockedFigure
-figureToDrawZ (Figure _ d (x, y, z)) 
-  | (d == DUp) || (d == DDown) = ((x - bs, y - bs, z), (x - bs, y, z), (x, y, z),      (x, y + bs, z))
-  | otherwise                  = ((x - bs, y, z),      (x, y, z),      (x, y - bs, z), (x + bs, y - bs, z))
+figureToDrawZ (Figure _ d c) 
+  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c - bs}, c {x = x c - bs}, c,      c {y = y c + bs})
+  | otherwise                  = (c {x = x c - bs},      c,      c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
   where
     bs = blockSize
 
 -- | Готовим правый зигзаг к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawS :: Figure -> BlockedFigure
-figureToDrawS (Figure _ d (x, y, z)) 
-  | (d == DUp) || (d == DDown) = ((x - bs, y + bs, z), (x - bs, y, z), (x, y, z),      (x, y - bs, z))
-  | otherwise                  = ((x - bs, y, z),      (x, y, z),      (x, y + bs, z), (x + bs, y + bs, z))
+figureToDrawS (Figure _ d c) 
+  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c + bs}, c {x = x c - bs}, c,      c {y = y c - bs})
+  | otherwise                  = (c {x = x c - bs},      c,      c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
   where
     bs = blockSize
 
 -- | Готовим Г-образную фигуру к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawJ :: Figure -> BlockedFigure
-figureToDrawJ (Figure _ d (x, y, z)) 
-  | d == DDown  = ((x - bs, y - bs, z), (x, y - bs, z), (x, y, z),      (x, y + bs, z))
-  | d == DUp    = ((x, y - bs, z),      (x, y, z),      (x, y + bs, z), (x + bs, y + bs, z))
-  | d == DRight = ((x - bs, y, z),      (x, y, z),      (x + bs, y, z), (x + bs, y - bs, z))
-  | otherwise   = ((x - bs, y + bs, z), (x - bs, y, z), (x, y, z),      (x + bs, y, z))
+figureToDrawJ (Figure _ d c) 
+  | d == DDown  = (c {x = x c - bs, y = y c - bs}, c {y = y c - bs}, c,      c {y = y c + bs})
+  | d == DUp    = (c {y = y c - bs},      c,      c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
+  | d == DRight = (c {x = x c - bs},      c,      c {x = x c + bs}, c {x = x c + bs, y = y c - bs})
+  | otherwise   = (c {x = x c - bs, y = y c + bs}, c {x = x c - bs}, c,      c {x = x c + bs})
   where
     bs = blockSize
 
 -- | Готовим L-образную фигуру к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawL :: Figure -> BlockedFigure
-figureToDrawL (Figure _ d (x, y, z)) 
-  | d == DDown  = ((x, y + bs, z),      (x, y, z),      (x, y - bs, z), (x + bs, y - bs, z))
-  | d == DUp    = ((x, y - bs, z),      (x, y, z),      (x, y + bs, z), (x - bs, y + bs, z))
-  | d == DRight = ((x - bs, y, z),      (x, y, z),      (x + bs, y, z), (x + bs, y + bs, z))
-  | otherwise   = ((x - bs, y - bs, z), (x - bs, y, z), (x, y, z),      (x + bs, y, z))
+figureToDrawL (Figure _ d c) 
+  | d == DDown  = (c {y = y c + bs},      c,      c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
+  | d == DUp    = (c {y = y c - bs},      c,      c {y = y c + bs}, c {x = x c - bs, y = y c + bs})
+  | d == DRight = (c {x = x c - bs},      c,      c {x = x c + bs}, c {x = x c + bs, y = y c + bs})
+  | otherwise   = (c {x = x c - bs, y = y c - bs}, c {x = x c - bs}, c,      c {x = x c + bs})
   where
     bs = blockSize
 
 -- | Готовим Т-образную фигуру к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawT :: Figure -> BlockedFigure
-figureToDrawT (Figure _ d (x, y, z)) 
-  | d == DDown  = ((x - bs, y, z), (x, y, z), (x + bs, y, z), (x, y - bs, z))
-  | d == DUp    = ((x - bs, y, z), (x, y, z), (x + bs, y, z), (x, y + bs, z))
-  | d == DRight = ((x, y + bs, z), (x, y, z), (x, y - bs, z), (x + bs, y, z))
-  | otherwise   = ((x, y + bs, z), (x, y, z), (x, y - bs, z), (x - bs, y, z))
+figureToDrawT (Figure _ d c) 
+  | d == DDown  = (c {x = x c - bs}, c, c {x = x c + bs}, c {y = y c - bs})
+  | d == DUp    = (c {x = x c - bs}, c, c {x = x c + bs}, c {y = y c + bs})
+  | d == DRight = (c {y = y c + bs}, c, c {y = y c - bs}, c {x = x c + bs})
+  | otherwise   = (c {y = y c + bs}, c, c {y = y c - bs}, c {x = x c - bs})
   where
     bs = blockSize
 
@@ -236,7 +243,7 @@ moveLeft gs
 
 -- | Насильно двигаем фигуру налево.
 moveLeftFigure :: Figure -> Figure
-moveLeftFigure (Figure s t (b, c, z)) = (Figure s t (b - blockSize, c, z))
+moveLeftFigure (Figure s t c) = (Figure s t c {x = x c - blockSize})
 
 -- | Шаг вправо.
 moveRight :: Gamestate -> Gamestate
@@ -248,37 +255,40 @@ moveRight gs
 
 -- | Насильно двигаем фигуру направо.
 moveRightFigure :: Figure -> Figure
-moveRightFigure (Figure s t (b, c, z)) = (Figure s t (b + blockSize, c, z))
+moveRightFigure (Figure s t c) = (Figure s t c {x = x c + blockSize})
 
 -- | Проверка, пересекает ли блок границы игрового окна.
 collidesBlock :: Coord -> Bool
-collidesBlock (a, b, _) 
+collidesBlock c
   | (a < 0) || (a + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
   | otherwise = False
+  where
+    a = x c
+    b = y c
 
 -- | Проверка, пересекает ли блок боковые границы окна, либо доску.
 collidesBlockSides :: Coord -> Board -> Bool
-collidesBlockSides (a, _, _) []                     = (a < 0) || (a + blockSize > screenWidth)
-collidesBlockSides (a, b, _) ((brda, brdb, _) : []) = (a < 0) || (a + blockSize > screenWidth) || (a == brda) && (b == brdb)
-collidesBlockSides (a, b, z) ((brda, brdb, _) : brds) 
-  | (a < 0) || (a + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
-  | otherwise = collidesBlockSides (a, b, z) brds
+collidesBlockSides c []                     = (x c < 0) || (x c + blockSize > screenWidth)
+collidesBlockSides c (c1 : []) = (x c < 0) || (x c + blockSize > screenWidth) || (x c == x c1) && (x c == y c1)
+collidesBlockSides c (c1 : brds) 
+  | (x c < 0) || (x c + blockSize > screenWidth) || (x c==x c1) && (y c==y c1)  = True
+  | otherwise = collidesBlockSides c brds
 
 -- | Проверка, пересекает ли блок пол или доску.
 collidesBlockDown :: Coord -> Board-> Bool
-collidesBlockDown (_, b, _) []                      = (b + blockSize > screenHeight)
-collidesBlockDown (a, b, _) ((brda, brdb, _) : [])  = (b + blockSize > screenHeight) || (a==brda) && (b==brdb)
-collidesBlockDown (a, b, z) ((brda, brdb, _) : brds)  
-  | (b + blockSize > screenHeight) || (a == brda) && (b == brdb)  = True
-  |  otherwise = collidesBlockDown (a, b, z) brds
+collidesBlockDown c []                      = (y c + blockSize > screenHeight)
+collidesBlockDown c (c1 : [])  = (y c + blockSize > screenHeight) || (x c==x c1) && (y c==y c1)
+collidesBlockDown c (c1 : brds)  
+  | (y c + blockSize > screenHeight) || (x c == x c1) && (y c == y c1)  = True
+  |  otherwise = collidesBlockDown c brds
 
 -- | Проверка, пересекается ли блок потолок или доску.
 collidesBlockUp :: Coord -> Board-> Bool
-collidesBlockUp (_, b, _) []                    =  b < 0
-collidesBlockUp (_, b, _) ((_, brdb, _) : [])   = (b < 0) && (b == brdb)
-collidesBlockUp (a, b, z) ((_, brdb, _) : brds)  
-  | b < 0 && (b == brdb)  = True
-  | otherwise             = collidesBlockUp (a, b, z) brds
+collidesBlockUp c []                    =  y c < 0
+collidesBlockUp c (c1 : [])   = (y c < 0) && (y c == y c1)
+collidesBlockUp c (c1 : brds)  
+  | y c < 0 && (y c == y c1)  = True
+  | otherwise                 = collidesBlockUp c brds
 
 -- | Пересекает ли фигура доску или границы?
 collidesFigure :: BlockedFigure -> Board -> Bool
@@ -305,33 +315,33 @@ isGameOver gs = collidesFigureDown (figureToDraw (head . figures $ gs)) (board g
 -- | Сортируем строки.
 sortRows :: Board -> Board
 sortRows []     = []
-sortRows ((brda, brdb, z) : brds) = sortRows (filter (\(_, y, _) -> y > brdb) brds) ++ [(brda, brdb, z)] ++ sortRows (filter (\(_, y, _) -> y <= brdb) brds)
+sortRows (c : brds) = sortRows (filter (\c1 -> y c1 > y c) brds) ++ [c] ++ sortRows (filter (\c1 -> y c1 <= y c) brds)
 
 -- | Удалям заполненные строки.
 deleteRows :: Board -> Board
 deleteRows [] = []
-deleteRows ((x, y, z) : brds)
-  | isFullRow (row brd y) = deleteRows . boardMoveDown $ (upperRows brd y) ++ (lowerRows brd y)
-  | otherwise = (row brd y) ++ (deleteRows (upperRows brd y))
+deleteRows (c : brds)
+  | isFullRow (row brd (y c)) = deleteRows . boardMoveDown $ (upperRows brd (y c)) ++ (lowerRows brd (y c))
+  | otherwise = (row brd (y c)) ++ (deleteRows (upperRows brd (y c)))
   where 
-    brd = ((x, y, z) : brds)
+    brd = (c : brds)
 
 -- | Строки выше заданной строки.
 upperRows :: Board -> Int -> Board
-upperRows brd scope = (filter (\(_, y, _) -> y < scope) brd)
+upperRows brd scope = (filter (\c1 -> y c1 < scope) brd)
 
 -- | Строки ниже заданной строки.
 lowerRows :: Board -> Int -> Board
-lowerRows brd scope = (filter (\(_, y, _) -> y > scope) brd)
+lowerRows brd scope = (filter (\c1 -> y c1 > scope) brd)
 
 -- | Сдвигаем строки доски вниз.
 boardMoveDown :: Board -> Board
 boardMoveDown [] = []
-boardMoveDown ((x, y, z) : brd) = (x, y + blockSize, z) : boardMoveDown brd
+boardMoveDown (c : brd) = c {y = (y c) + blockSize} : boardMoveDown brd
 
 -- | n-ая строка доски.
 row :: Board -> Int -> [Coord]
-row b n = (filter (\(_, y, _) -> n == y) b)
+row b n = (filter (\b1 -> n == y b1) b)
 
 -- | Заполнена ли доска?
 isFullRow :: [Coord] -> Bool
@@ -347,7 +357,7 @@ dropit gs pts
 
 -- | Насильно сдвигаем фигуру вниз.
 moveDownFigure :: Figure -> Figure
-moveDownFigure (Figure sha dir (b, c, z)) = (Figure sha dir (b, c + blockSize, z))
+moveDownFigure (Figure sha dir c) = (Figure sha dir c {y = (y c) + blockSize} )
 
 -- | Рисуем доску.
 drawBoard :: Board  -> Picture
@@ -390,9 +400,9 @@ numtocolor _ = white
 
 -- | Рисуем блок.
 drawBlock :: Coord-> Picture
-drawBlock  (b, c, clr) 
+drawBlock  crd 
   =  pictures [ translate (-w) h (scale  1 1 (pictures (
-                  [ color (numtocolor clr) (polygon [ (fromIntegral b,         fromIntegral (-c))
+                  [ color (numtocolor clr1) (polygon [ (fromIntegral b,         fromIntegral (-c))
                                                     , (fromIntegral b,         fromIntegral (-c - 30))
                                                     , (fromIntegral  (b + 30), fromIntegral (-c - 30))
                                                     , (fromIntegral  (b + 30), fromIntegral (- c))
@@ -401,7 +411,9 @@ drawBlock  (b, c, clr)
   where
     w = fromIntegral screenWidth  / 2
     h = fromIntegral screenHeight / 2
-
+    b = x crd
+    c = y crd
+    clr1 = clr crd
 -- | Рисуем фигуру.
 drawFigure :: Gamestate  ->  Picture
 drawFigure gs = drawBlockedFigure (figureToDraw . curfig $ gs)
@@ -479,17 +491,21 @@ boardProfit b = 2000 + 10000 * (numberDeletes b) - 100 * (numberHoles b) - 10 * 
 
 -- | Функция сравнения двух элементов доски (нужна для упорядочивания доски).
 greater :: Coord -> Coord -> Bool
-greater (x1, y1, _) (x2, y2, _) 
+greater c1 c2
   | x1 > x2 = True
   | (x1 == x2) && (y1 < y2) = True
   | otherwise = False
-
+  where
+    x1 = x c1
+    x2 = x c2
+    y1 = y c1
+    y2 = y c2
 -- | Сортирует доску по столбцам. Столбцы также отсортировываются.
 sortBoard :: Board -> Board
 sortBoard []           = []
-sortBoard (brd : brds) = sortBoard (filter (\x -> greater x brd ) brds)
+sortBoard (brd : brds) = sortBoard (filter (\x1 -> greater x1 brd ) brds)
                       ++ [brd]
-                      ++ sortBoard (filter (\x -> not (greater x brd)) brds)
+                      ++ sortBoard (filter (\x1 -> not (greater x1 brd)) brds)
 
 -- | Сравнивает, какой вариант лучше.
 best :: Variant -> Variant -> Variant
@@ -504,7 +520,7 @@ bestVariant (v1 : vs) = best v1 (bestVariant vs)
 
 -- | Высота доски. Имеется ввиду высочайшая точка доски.
 boardHeight :: Board -> Int
-boardHeight brds  = minimum (map (\(_, y, _) -> y) brds)
+boardHeight brds  = minimum (map (\c1 -> y c1) brds)
 
 -- | Средняя высота доски.
 avgBoardHeight :: Board -> Int
@@ -517,7 +533,10 @@ sumBoardHeight b = sumhofb (sortBoard b)
 -- | Сумма высот столбцов доски (принимает упорядоченную доску, и считает сумму высот её столбцов).
 sumhofb :: Board -> Int
 sumhofb [] = 0
-sumhofb ((x1, y1, z1) : hs) = y1 + sumhofb (filter (\(x, _, _) -> not (x == x1)) ((x1, y1, z1) : hs))
+sumhofb (c : hs) = y1 + sumhofb (filter (\c1 -> not (x c1 == x1)) (c : hs))
+  where
+    x1 = x c
+    y1 = y c
 
 -- | Количество дырок в доске.
 numberHoles :: Board -> Int
@@ -526,12 +545,14 @@ numberHoles b = nh (sortBoard b)
 -- | Сумма дырок в столбцах.
 nh :: Board -> Int
 nh [] = 0
-nh ((x1, y1, z1) : hs) = nhcolumn (filter (\(x, _, _) -> x == x1) ((x1, y1, z1) : hs))  + nh (filter (\(x, _, _) -> not (x == x1)) ((x1, y1, z1) : hs))
+nh (c : hs) = nhcolumn (filter (\c1 -> x c1 == x1) (c : hs))  + nh (filter (\c1 -> not (x c1 == x1)) (c : hs))
+  where
+    x1 = x c
 
 -- | Количество дырок в столбце.
 nhcolumn :: [Coord] -> Int
 nhcolumn [] = 0
-nhcolumn ((x1, y1, z1) : hs) = (div (screenHeight - y1) blockSize) - length ((x1, y1, z1) : hs)
+nhcolumn (c1 : hs) = (div (screenHeight - (y c1)) blockSize) - length (c1 : hs)
 
 -- | Количество удаленных строк, после сделанного хода.
 numberDeletes :: Board -> Int
@@ -540,7 +561,7 @@ numberDeletes b = (boardHeight . deleteRows . sortRows $ b) - (boardHeight b)
 -- | Сортируем варианты по профиту, количеству поворотова, смещению.
 sortVariants :: [Variant] -> [Variant]
 sortVariants []     = []
-sortVariants (v : vs)     = sortVariants (filter (\x -> better x v) vs) ++ [v] ++ sortVariants (filter (\x -> not (better x v)) vs)
+sortVariants (v : vs)     = sortVariants (filter (\x1 -> better x1 v) vs) ++ [v] ++ sortVariants (filter (\x1 -> not (better x1 v)) vs)
 
 -- | Функция сравнения двух вариантов.
 better :: Variant -> Variant -> Bool
@@ -583,7 +604,7 @@ genVariant gs dx r = Variant
 
 -- | На какой высоте находится фигура.
 heightFigure :: Figure -> Int
-heightFigure (Figure _ _ (_, res, _)) = res
+heightFigure (Figure _ _ c) = y c
 
 -- | в 'newTact' вызывается 'makeStep' 4 раза. Т.е ИИ делает 4 хода в такт.
 makeStep :: Gamestate -> Gamestate
