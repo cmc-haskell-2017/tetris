@@ -18,8 +18,8 @@ import Tetris
 
 data MP_Gamestate = MP_Gamestate 
   {
-    opponentState :: TVar Gamestate
-  , myState       :: TVar Gamestate
+    opponentState :: TVar GameState
+  , myState       :: TVar GameState
   , connection    :: Connection
   }
 
@@ -31,9 +31,9 @@ handleUpdatesMP MP_Gamestate{..} = forever $ do
   myGS <- return (getFst pair)
   opGS <- return (getSnd pair)
 
-  _ <- atomically $ do
-     writeTVar opponentState (fromWebGS opGS)
-     writeTVar myState       (fromWebGS myGS)
+  atomically $ do
+     writeTVar opponentState (fromWeb opGS)
+     writeTVar myState       (fromWeb myGS)
 
 
 getFst :: GSPair -> WebGS

@@ -1,3 +1,6 @@
+{-# LANGUAGE RecordWildCards #-}
+
+
 module Tetris.Handling where
 
 import System.Random
@@ -10,69 +13,74 @@ import Tetris.Types
 import Tetris.Drawing
 import Tetris.Colliding
 
-handleTetris :: Event -> Gamestate -> Gamestate
+handleTetris :: Event -> GameState -> GameState
 
-handleTetris (EventKey (Char 'l') Down _ _) (a,(Figure sha dir (b,c,z):rest),d,e) = moveRight (a,(Figure sha dir (b,c,z):rest),d,e)
+handleTetris (EventKey (Char 'l') Down _ _) gs = moveRight gs
 handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  (a,(Figure sha dir (b,c,z):rest),d,e)  = moveLeft (a,(Figure sha dir (b,c,z):rest),d,e)
+handleTetris (EventKey (Char 'j') Down _ _)  gs  = moveLeft gs
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e)  = dropit (screenHeight-c) (a,(Figure sha dir (b,c,z):rest),d,e)
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs@GameState{..} = dropit (screenHeight - (take2 $ coord $ head figures)) gs
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'k') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),d,e) = turn (a, (Figure sha dir (b ,c,z):rest),d,e)
+handleTetris (EventKey (Char 'k') Down _ _ ) gs = turn gs
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'p') Down _ _ ) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = pause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e)
+handleTetris (EventKey (Char 'p') Down _ _ ) gs = pause gs
 handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
 handleTetris  _ t = t  
 
 
-pause::Gamestate -> Gamestate
-pause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e) = (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e)
+pause::GameState -> GameState
+pause gs@GameState{..} = GameState board figures (- speed) time score
 
 
-turn::Gamestate -> Gamestate
-turn (a,(Figure t DUp c):rest,d,e) | collide1 = (a,(Figure t DUp c):rest,d,e)
-                                   | otherwise = (a,(Figure t DRight c):rest,d,e)
+turn::GameState -> GameState
+turn GameState{..} = GameState board ((turnFigure board (head figures)) : (tail figures)) speed time score
+
+turnFigure :: Board -> Figure -> Figure
+turnFigure board (Figure t DUp c)    | collide1 = Figure t DUp c
+                                     | otherwise = Figure t DRight c
                             where 
-                                collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
-turn (a,(Figure t DRight c):rest,d,e) | collide2 = (a,(Figure t DRight c):rest,d,e)
-                                      | otherwise = (a,(Figure t DDown c):rest,d,e)
+                                collide1 = collidesFigure (figureToDraw (Figure t DRight c)) board
+turnFigure board (Figure t DRight c) | collide2 = Figure t DRight c
+                                     | otherwise = Figure t DDown c
                             where 
-                                collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
-turn (a,(Figure t DDown c):rest,d,e) | collide3 = (a,(Figure t DDown c):rest,d,e)
-                                     | otherwise = (a,(Figure t DLeft c):rest,d,e)
+                                collide2 = collidesFigure (figureToDraw (Figure t DDown c)) board
+turnFigure board (Figure t DDown c)  | collide3 = Figure t DDown c
+                                     | otherwise = Figure t DLeft c
                             where 
-                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
-turn (a,(Figure t DLeft c):rest,d,e) | collide4 = (a,(Figure t DLeft c):rest,d,e)
-                                     | otherwise = (a,(Figure t DUp c):rest,d,e)
+                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) board
+turnFigure board (Figure t DLeft c)  | collide4 = Figure t DLeft c
+                                     | otherwise = Figure t DUp c
                             where 
-                                collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
+                                collide4 = collidesFigure (figureToDraw (Figure t DUp c)) board
 
 
 
+-- (a,((Figure sha dir (b,c,z)):rest),d,e)
 
-dropit::Int -> Gamestate -> Gamestate
-dropit pts (a,((Figure sha dir (b,c,z)):rest),d,e) | collide = (a,((Figure sha dir (b,c,z)):rest),d,e+(div pts blockSize))                   
-                                                  | otherwise = dropit pts (a,((Figure sha dir (b,c + blockSize,z)):rest),d,e)                                     
-                                          where                                           
-                                              collide = collidesFigureDown (figureToDraw (Figure sha dir (b,c + blockSize,z))) a
+dropit :: Int -> GameState -> GameState
+dropit pts GameState{..} | collide = GameState board figures speed time (score + div pts blockSize)                
+                         | otherwise = dropit pts (GameState board ((moveFigureDown $ head figures) : tail figures) speed time score)
+                            where                                           
+                                collide = collidesFigureDown (figureToDraw (moveFigureDown $ head figures)) board
 
 
 
-moveLeft::Gamestate -> Gamestate
-moveLeft (a,((Figure s t (b,c,z)):rest),d,e) | collide = (a, ((Figure s t (b,c,z)):rest),d,e)
-        |otherwise = (a, ((Figure s t (b - blockSize,c,z)):rest),d,e)
-  where 
-    collide = collidesFigureSides (figureToDraw (Figure s t (b - blockSize,c,z))) a
+moveLeft::GameState -> GameState
+moveLeft gs@GameState{..} | collide = gs
+                          | otherwise = GameState board ((moveFigureLeft $ head figures) : (tail figures)) speed time score
+    where 
+      collide = collidesFigureSides (figureToDraw $ moveFigureLeft $ head figures) board
 
-moveRight::Gamestate -> Gamestate
-moveRight (a,(Figure s t (b,c,z)):rest,d,e) | collide = (a, ((Figure s t (b,c,z)):rest),d,e)
-        |otherwise = (a, ((Figure s t (b + blockSize,c,z)):rest),d,e)
-  where 
-    collide = collidesFigureSides (figureToDraw (Figure s t (b + blockSize,c,z))) a
+moveRight::GameState -> GameState
+moveRight gs@GameState{..} | collide = gs
+                           | otherwise = GameState board ((moveFigureRight $ head figures) : (tail figures)) speed time score
+    where 
+      collide = collidesFigureSides (figureToDraw $ moveFigureRight $ head figures) board
+
 
 

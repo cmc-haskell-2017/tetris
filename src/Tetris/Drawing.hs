@@ -1,3 +1,6 @@
+{-# LANGUAGE RecordWildCards #-}
+
+
 module Tetris.Drawing where
 
 import System.Random
@@ -138,9 +141,9 @@ drawBlock bias (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
   h = fromIntegral screenHeight / 2
 
 
-drawFigure :: Int -> Gamestate ->  Picture
-drawFigure bias (b,(f:fs),s,t) = drawBlockedFigure bias (figureToDraw f)
-drawFigure _ (b,[],s,t) = Blank
+drawFigure :: Int -> GameState ->  Picture
+drawFigure bias gs@GameState{..} | null figures = Blank
+                                 | otherwise = drawBlockedFigure bias (figureToDraw $ head figures)
 
 
 
@@ -152,11 +155,12 @@ drawBlockedFigure bias ((a, b, c, d)) =   pictures  [drawBlock bias a ,
 
 
 --Рисуем тетрис
-drawTetris :: Int -> Gamestate -> Picture
-drawTetris bias (b,fs,s,t) = pictures
-  [ drawFigure  bias (b,fs,s,t) ,
-    drawBoard   bias b ,
-    drawScore   bias t
+drawTetris :: Int -> GameState -> Picture
+drawTetris bias gs@GameState{..} = pictures
+  [   
+  drawFigure  bias gs 
+    , drawBoard   bias board 
+    , drawScore   bias score
   ] 
 
 

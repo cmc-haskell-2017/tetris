@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Tetris.Updating where
 
 import System.Random
@@ -13,8 +14,8 @@ import Tetris.Colliding
 -- import Tetris.Handling
 
 
-isGameOver::Gamestate -> Bool
-isGameOver (a, f1:f2:rest ,(sp, ti),e) = collidesFigureDown (figureToDraw f2) a
+isGameOver::GameState -> Bool
+isGameOver GameState{..} = collidesFigureDown (figureToDraw (head $ tail $ figures)) board
 
 
 sortRows :: Board -> Board
@@ -50,44 +51,46 @@ updateSpeed _ _ = 0
 --С каждым кадром двигает фигуру вниз и пока здесь же проверяет, не достигла ли фигура нижней границы
 
 
-updateTetris :: Float -> Gamestate -> Gamestate
-updateTetris dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) | gameover = (genEmptyBoard,rest,(init_tact, 0),0)
+updateTetris :: Float -> GameState -> GameState
+updateTetris dt gs@GameState{..}  | gameover = GameState genEmptyBoard (tail figures) init_tact 0 0
                                                               -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
-                                                              | otherwise = newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e) dt sp)
-                                                                 where
-                                                                   -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
-                                                                   gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e)
+                                  | otherwise = newLevel (newTact gs dt speed)
+                                     where
+                                       -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
+                                       gameover = isGameOver gs
 -- ===========================================
 -- timing
 -- =======================================
 
-newTact::Gamestate -> Float -> Float -> Gamestate
-newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s) dt tact
-  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
-  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1)
-  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s)
-                                        where
-                                          new = ti + dt >= tact
-                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
-                                          paused = sp < 0
 
-newLevel::Gamestate -> Gamestate
-newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
-  | l5 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.1, ti), s)
-  | l4 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.15, ti), s)
-  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.2, ti), s)
-  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.25, ti), s)
-  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.3, ti), s)
-  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.4, ti), s)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s)
+-- (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s)
+newTact::GameState -> Float -> Float -> GameState
+newTact gs@GameState{..} dt tact
+  | paused = gs
+  | new && collides = GameState (deleteRows $ sortRows $ updateBoard (head figures) board) (tail figures) speed time (score + 1)
+  | new = newTact (GameState board ((moveFigureDown $ head figures) : (tail figures)) speed 0 score) (dt + time - tact) tact
+  | collides = GameState board figures speed (time + dt + tact * 0.5) score
+  | otherwise = GameState board figures speed (time + dt) score
+                                        where
+                                          new = time + dt >= tact
+                                          collides =  collidesFigureDown (figureToDraw $ moveFigureDown $ head figures) board
+                                          paused = speed < 0
+
+newLevel::GameState -> GameState
+newLevel gs@GameState{..}
+  | l5 = GameState board figures (signum(speed) * 0.1)  time score
+  | l4 = GameState board figures (signum(speed) * 0.15) time score
+  | l3 = GameState board figures (signum(speed) * 0.2)  time score
+  | l2 = GameState board figures (signum(speed) * 0.25) time score
+  | l2 = GameState board figures (signum(speed) * 0.3)  time score
+  | l1 = GameState board figures (signum(speed) * 0.4)  time score
+  | otherwise = gs
         where 
-          l5 = s >= 5000
-          l4 = s >= 3000 && s <= 5000
-          l3 = s >= 2000 && s <= 3000
-          l2 = s >= 1500 && s <= 2000
-          l1 = s >= 1000 && s <= 1500
+          l5 = score >= 5000
+          l4 = score >= 3000 && score <= 5000
+          l3 = score >= 2000 && score <= 3000
+          l2 = score >= 1500 && score <= 2000
+          l1 = score >= 1000 && score <= 1500
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 

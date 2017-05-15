@@ -125,7 +125,7 @@ addClient client config@Config{..} = do
     writeTVar configNames names
     modifyTVar configClients (Map.insert name client)
     modifyTVar controlThreads (Map.insert name forkId)
-    modifyTVar configUniverse (Map.insert name (toGS $ genUniverse g))
+    modifyTVar configUniverse (Map.insert name $ genUniverse g)
     return name
 
 
@@ -150,19 +150,19 @@ handleActions name conn cfg@Config{..} = forever $ do
 
 handlePlayerAction :: Action -> PlayerName -> GameState -> GameState
 handlePlayerAction act name gs@GameState{..}
-  | Text.head act == 'l' = toGS $ moveRight $ fromGS gs 
-  | Text.head act == 'j' = toGS $ moveLeft $ fromGS gs 
-  | Text.head act == 'k' = toGS $ turn $ fromGS gs 
-  | Text.head act == ' ' = toGS $ dropit pts $ fromGS gs 
-  | Text.head act == 'p' = toGS $ pause $ fromGS gs 
+  | Text.head act == 'l' = moveRight gs 
+  | Text.head act == 'j' = moveLeft gs 
+  | Text.head act == 'k' = turn gs 
+  | Text.head act == ' ' = dropit pts gs 
+  | Text.head act == 'p' = pause gs 
   | otherwise = gs
     where
-      pts = getSndCoord $ fromGS gs
+      pts = (screenHeight - (take2 $ coord $ head figures))
   -- return gs
 
 
-getSndCoord :: Gamestate -> Int
-getSndCoord (a,(Figure sha dir (b,c,z):rest),d,e) = screenHeight - c
+-- getSndCoord :: GameState -> Int
+-- getSndCoord (a,(Figure sha dir (b,c,z):rest),d,e) = screenHeight - c
 
 
 
@@ -186,7 +186,7 @@ periodicUpdates ms cfg@Config{..} = forever $ do
 
 
 updateT :: Float -> (PlayerName, GameState) -> (PlayerName, GameState)
-updateT secs (n, gs) = (n, toGS (updateTetris secs (fromGS gs)))
+updateT secs (n, gs) = (n, updateTetris secs gs)
 
 
 disconnectState :: State -> IO ()

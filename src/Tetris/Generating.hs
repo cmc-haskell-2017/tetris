@@ -1,3 +1,4 @@
+{-# LANGUAGE RecordWildCards #-}
 module Tetris.Generating where
 
 import System.Random
@@ -53,14 +54,16 @@ genRow 0 = []
 genRow w = (genRow (w-1)) ++ [Free]
 
 
-genUniverse::StdGen -> Gamestate
-genUniverse g = (genEmptyBoard,initFigures g,(init_tact, 0),0)
+genUniverse::StdGen -> GameState
+genUniverse g = GameState genEmptyBoard (initFigures g) init_tact 0 0
 
 
-genEmptyUniverse::StdGen -> Gamestate
-genEmptyUniverse _ = (genEmptyBoard,[],(init_tact, 0),0)
+genEmptyUniverse::StdGen -> GameState
+genEmptyUniverse _ = GameState genEmptyBoard [] init_tact 0 0
 
 
 -------------------------------------------------------------------------------------------------------------------------------------
+
+
 
 

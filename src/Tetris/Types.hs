@@ -59,7 +59,7 @@ type Time = Float
 --оптимизировано)
 --[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
-type Gamestate = (Board,  [Figure], (Speed, Time), Score)
+-- type Gamestate = (Board,  [Figure], (Speed, Time), Score)
 
 ------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -77,8 +77,12 @@ data FigureType = O | I | T | J | L | S | Z
 data Direction = DUp | DDown | DLeft | DRight
                       deriving(Generic, Eq, Show)
 
-data Figure = Figure FigureType Direction Coord 
-                      deriving(Generic, Eq, Show)
+data Figure = Figure 
+  {
+    f_type      :: FigureType 
+  , direction :: Direction
+  , coord     :: Coord 
+  } deriving(Generic, Eq, Show)
 
 instance Binary FigureType
 instance Binary Direction 
@@ -112,16 +116,20 @@ instance Show GameState where
 		show time ++ " " ++
 		show score ++ "end "
 
-fromGS :: GameState -> Gamestate
-fromGS GameState{..} = (board, figures, (speed, time), score)
+-- fromGS :: GameState -> Gamestate
+-- fromGS GameState{..} = (board, figures, (speed, time), score)
 
 
-toGS :: Gamestate -> GameState
-toGS (board, figures, (speed, time), score) = GameState board figures speed time score
+-- toGS :: Gamestate -> GameState
+-- toGS (board, figures, (speed, time), score) = GameState board figures speed time score
 
 
 toWeb :: GameState -> WebGS
 toWeb GameState{..} = WebGS board (take 10 figures) speed time score
+
+
+fromWeb :: WebGS -> GameState
+fromWeb WebGS{..} = GameState w_board w_figures w_speed w_time w_score
 
 
 
@@ -157,9 +165,25 @@ instance WebSocketsData GSPair where
   toLazyByteString   = encode
 
 
-fromWebGS :: WebGS -> Gamestate
-fromWebGS WebGS{..} = (w_board, w_figures, (w_speed, w_time), w_score)
 
 
-toWebGS :: Gamestate -> WebGS
-toWebGS (board, figures, (speed, time), score) = WebGS board (take 10 figures) speed time score
+moveFigureDown :: Figure -> Figure
+moveFigureDown (Figure t d (l, h, c)) = Figure t d (l, h + blockSize, c)
+
+moveFigureRight :: Figure -> Figure
+moveFigureRight (Figure t d (l, h, c)) = Figure t d (l + blockSize, h, c)
+
+moveFigureLeft :: Figure -> Figure
+moveFigureLeft (Figure t d (l, h, c)) = Figure t d (l - blockSize, h, c)
+
+take2 :: (Int, Int, Int) -> Int
+take2 (a, b, c) = b
+
+
+
+-- fromWebGS :: WebGS -> Gamestate
+-- fromWebGS WebGS{..} = (w_board, w_figures, (w_speed, w_time), w_score)
+
+
+-- toWebGS :: Gamestate -> WebGS
+-- toWebGS (board, figures, (speed, time), score) = WebGS board (take 10 figures) speed time score
