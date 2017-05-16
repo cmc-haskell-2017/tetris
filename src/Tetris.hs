@@ -202,43 +202,71 @@ generateRandomFigureList _ =  [Figure O DUp (0,0,0)]
 type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 
-turn::Gamestate -> GameState
-turn (a,(Figure t DUp c):rest,d,e,v,p,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
-                                   | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
-                            where 
-                                collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
-turn (a,(Figure t DRight c):rest,d,e,v,p,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
-                                      | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
-                            where 
-                                collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
-turn (a,(Figure t DDown c):rest,d,e,v,p,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
-                                     | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
-                            where 
-                                collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
-turn (a,(Figure t DLeft c):rest,d,e,v,p,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
-                                     | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
-                            where 
-                                collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
+
+turn::GameState -> GameState
+turn u |(typemoving u)== TetrisStepped = turnStepped u 
+        |otherwise = turnSmooth u
+
+turnStepped::GameState -> GameState
+
+
+turnStepped u | collide1 = u 
+       | otherwise= u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
+       where 
+                    collide1 = collidesFigure (figureToDraw (chRotation (getf(figure u)))) (board u)
+
+chRotation:: Figure->Figure
+chRotation  (Figure t DUp c) = (Figure t DRight c)
+chRotation  (Figure t DRight c) = (Figure t DDown c)
+chRotation (Figure t DDown c) = (Figure t DLeft c)
+chRotation (Figure t DLeft c) = (Figure t DUp c)
+
+turnSmooth::GameState -> GameState
+
+
+turnSmooth u | collide1 = u 
+       | otherwise= u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
+       where 
+                    collide1 = collidesFigureSmooth (figureToDraw (chRotation (getf(figure u)))) (board u)
+
+
+
+--turn (a,(Figure t DUp c):rest,d,e,v,p,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
+  --                                 | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
+--                            where 
+  --                              collide1 = collidesFigure (figureToDraw (Figure t DRight c)) a
+--turn (a,(Figure t DRight c):rest,d,e,v,p,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,p,k))
+  --                                    | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
+    --                        where 
+      --                          collide2 = collidesFigure (figureToDraw (Figure t DDown c)) a
+--turn (a,(Figure t DDown c):rest,d,e,v,p,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,p,k))
+  --                                   | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
+    --                        where 
+      --                          collide3 = collidesFigure (figureToDraw (Figure t DLeft c)) a
+--turn (a,(Figure t DLeft c):rest,d,e,v,p,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,p,k))
+  --                                   | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,p,k))
+    --                        where 
+      --                          collide4 = collidesFigure (figureToDraw (Figure t DUp c)) a
 
 
 
 
-turn (a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
-                                   | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
-                            where 
-                                collide1 = collidesFigureSmooth (figureToDraw (Figure t DRight c)) a
-turn (a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
-                                      | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
-                            where 
-                                collide2 = collidesFigureSmooth (figureToDraw (Figure t DDown c)) a
-turn (a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
-                                     | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
-                            where 
-                                collide3 = collidesFigureSmooth (figureToDraw (Figure t DLeft c)) a
-turn (a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
-                                     | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
-                            where 
-                                collide4 = collidesFigureSmooth (figureToDraw (Figure t DUp c)) a
+--turn (a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k) | collide1 = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
+  --                                 | otherwise = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
+    --                        where 
+      --                          collide1 = collidesFigureSmooth (figureToDraw (Figure t DRight c)) a
+--turn (a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k) | collide2 = (toGS(a,(Figure t DRight c):rest,d,e,v,TetrisSmooth,k))
+  --                                    | otherwise = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
+    --                        where 
+      --                          collide2 = collidesFigureSmooth (figureToDraw (Figure t DDown c)) a
+--turn (a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k) | collide3 = (toGS(a,(Figure t DDown c):rest,d,e,v,TetrisSmooth,k))
+  --                                   | otherwise = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
+    --                        where 
+      --                          collide3 = collidesFigureSmooth (figureToDraw (Figure t DLeft c)) a
+--turn (a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k) | collide4 = (toGS(a,(Figure t DLeft c):rest,d,e,v,TetrisSmooth,k))
+  --                                   | otherwise = (toGS(a,(Figure t DUp c):rest,d,e,v,TetrisSmooth,k))
+    --                        where 
+      --                          collide4 = collidesFigureSmooth (figureToDraw (Figure t DUp c)) a
 
 
 figureToDraw::Figure->BlockedFigure
@@ -418,9 +446,12 @@ collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlo
 collidesFigureDownSmooth::BlockedFigure -> Board -> Bool
 collidesFigureDownSmooth (a,b,c,d) board | (collidesBlockDownSmooth a board) || (collidesBlockDownSmooth b board) || (collidesBlockDownSmooth c board) || (collidesBlockDownSmooth d board) = True
         |otherwise = False
-isGameOver::Gamestate -> Bool
-isGameOver (a,(f1:f2:rest),d,e,v,TetrisStepped,k) = collidesFigureDown (figureToDraw f2) a
-isGameOver (a,(f1:f2:rest),d,e,v,TetrisSmooth,k) = collidesFigureDownSmooth (figureToDraw f1) a
+isGameOver::GameState -> Bool
+isGameOver u |((typemoving u) == TetrisStepped) = collidesFigureDown (figureToDraw (getf(rest  (figure u))) ) (board u)  
+           |otherwise = collidesFigureDownSmooth (figureToDraw (getf(figure u))) (board u)
+
+--isGameOver (a,(f1:f2:rest),d,e,v,TetrisStepped,k) = collidesFigureDown (figureToDraw f2) a
+--isGameOver (a,(f1:f2:rest),d,e,v,TetrisSmooth,k) = collidesFigureDownSmooth (figureToDraw f1) a
 
 
 
@@ -931,69 +962,164 @@ updateSpeed _ _ = 0
 
 --Аргумент функции play, обновляет состояние тетриса
 --С каждым кадром двигает фигуру вниз и пока здесь же проверяет, не достигла ли фигура нижней границы
-
 updateTetris :: Float -> GameState -> GameState
-updateTetris dt u = updateTetrisHelp dt (fromGS u)
+updateTetris dt u |(typemoving u) == TetrisStepped = updateTetrisStepped dt u 
+             |otherwise = updateTetrisSmooth dt u
+
+updateTetrisStepped :: Float -> GameState -> GameState 
+updateTetrisStepped dt u |gameover =   u{ board   = genEmptyBoard  
+                          , figure  = (rest  (figure u))
+                          , speedandtime   = (0.7, 0)
+                          , score    = 0
+                          
+                          
+                          ,tactgamestate     = 0.7
+                          }  
+                    |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) ) 
+                    where
+                                        gameover = isGameOver u   
+updateTetrisSmooth :: Float -> GameState -> GameState 
+updateTetrisSmooth dt u |gameover =   u{ board   = genEmptyBoard  
+                          , figure  = (rest  (figure u))
+                          , speedandtime   = (0.01, 0)
+                          , score    = 0
+                          
+                          
+                          ,tactgamestate     = 0.01
+                          }  
+                    |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) )                                
+               where
+                                        gameover = isGameOver u   
+
+--updateTetris :: Float -> GameState -> GameState
+--updateTetris dt u = updateTetrisHelp dt (fromGS u)
                                                                   
-updateTetrisHelp :: Float -> Gamestate -> GameState
-updateTetrisHelp dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)|p==TetrisStepped = updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)            
-                                                                  |otherwise = updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
+--updateTetrisHelp :: Float -> Gamestate -> GameState
+--updateTetrisHelp dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)|p==TetrisStepped = updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)            
+ --                                                                 |otherwise = updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
 
 
-updateTetrisStepped :: Float -> Gamestate -> GameState
-updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.7, 0),0,v,p,0.7))
-                                                              -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
-                                                                            | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
-                                                                              where
-                                                                   -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
-                                                                              gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
-updateTetrisSmooth:: Float -> Gamestate -> GameState
-updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.01, 0),0,v,p,0.01))
-                                                              -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
-                                                                            | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
-                                                                              where
-                                                                   -- collide =  collidesFigureDown (figureToDraw (Figure sha dir (b ,c + blockSize,cl)))   a
-                                                                              gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
+--updateTetrisStepped :: Float -> Gamestate -> GameState
+--updateTetrisStepped dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.7, 0),0,v,p,0.7))
+--                                                              -- | collide =  (deleteRows (sortRows (updateBoard (Figure sha dir (b ,c,cl)) a)), rest, (sp, ti), e + 1)
+--                                                                            | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
+  --                                                                            where
+                                                                   
+   --                                                                           gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
+--updateTetrisSmooth:: Float -> Gamestate -> GameState
+--updateTetrisSmooth dt (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) | gameover = (toGS(genEmptyBoard,rest,(0.01, 0),0,v,p,0.01))
+  --                                                            
+    --                                                                        | otherwise = (toGS(newLevel (newTact (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k) dt sp)))
+      --                                                                        where
+        --                                                          
+          --                                                                    gameover = isGameOver (a,(Figure sha dir (b,c,cl):rest),(sp, ti),e,v,p,k)
 -- ===========================================
 -- timing
 -- =======================================
+newTact::GameState -> Float -> Float -> GameState
+newTact u  dt tact |(typemoving u) == TetrisStepped = newTactStepped u dt tact
+          |otherwise = newTactSmooth u dt tact
 
-newTact::Gamestate -> Float -> Float -> Gamestate
-newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k) dt tact
-  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k)
-  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisStepped,k)
-  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s,v,TetrisStepped,k) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisStepped,k)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisStepped,k)
+chZ :: (Speed,Time)    ->(Speed,Time)  
+chZ (sp,b) = (sp,0) 
+extrTime:: (Speed,Time) -> Time
+extrTime (s,ti) = ti
+
+extrSpeed:: (Speed,Time) -> Speed
+extrSpeed (sp,ti) = sp
+chSpeedAndTime::(Speed,Time) ->Float->Float ->(Speed,Time)
+chSpeedAndTime (sp,ti) tact dt = (sp, ti + dt + tact * 0.3)
+
+pldtSpeedAndTime::(Speed,Time) ->Float->(Speed,Time)
+pldtSpeedAndTime (sp, ti ) dt= (sp, ti + dt)
+
+
+newTactStepped :: GameState -> Float -> Float -> GameState
+newTactStepped u dt tact  | paused =u  
+  | new && collides = u{ board = (deleteRows (sortRows (updateBoard (getf(figure u)) (board u)))), 
+                        figure = (rest  (figure u)), 
+                        speedandtime = (speedandtime u),
+                        score =  (score u) + 1
+                        }
+  | new = newTact u{figure = cons  (plbly (getf(figure u)))   (rest  (figure u)) ,
+                      speedandtime = chZ (speedandtime u)} (dt + (extrTime (speedandtime u)) - tact) tact
+  | collides = u{speedandtime = (chSpeedAndTime (speedandtime u) tact dt) }
+  | otherwise = u{speedandtime = pldtSpeedAndTime (speedandtime u) dt}
                                         where
-                                          new = ti + dt >= tact
-                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
-                                          paused = sp < 0
-newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k) dt tact
-  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k)
-  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisSmooth,k)
-  | new = newTact (b, (Figure sha dir (f1,f2 + 1,f3):rest), (sp, 0), s,v,TetrisSmooth,k) (dt + ti - tact) tact
-  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisSmooth,k)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisSmooth,k)
+                                          new = (extrTime (speedandtime u)) + dt >= tact
+                                          collides =  collidesFigureDown (figureToDraw (plbly (getf(figure u)))) (board u)
+                                          paused = (extrSpeed(speedandtime u)) < 0
+newTactSmooth :: GameState -> Float -> Float -> GameState
+newTactSmooth u dt tact  | paused =u  
+  | new && collides = u{ board = (deleteRows (sortRows (updateBoard (getf(figure u)) (board u)))), 
+                        figure = (rest  (figure u)), 
+                        speedandtime = (speedandtime u),
+                        score =  (score u) + 1
+                        }
+  | new = newTact u{figure = cons  (ploy (getf(figure u)))   (rest  (figure u)) ,
+                      speedandtime = chZ (speedandtime u)} (dt + (extrTime (speedandtime u)) - tact) tact
+  | collides = u{speedandtime = (chSpeedAndTime (speedandtime u) tact dt) }
+  | otherwise = u{speedandtime = pldtSpeedAndTime (speedandtime u) dt}
                                         where
-                                          new = ti + dt >= tact
-                                          collides =  collidesFigureDownSmooth (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
-                                          paused = sp < 0
-newLevel::Gamestate -> Gamestate
-newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
-  | l5 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.1, ti), s,v,p,k)
-  | l4 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.15, ti), s,v,p,k)
-  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.2, ti), s,v,p,k)
-  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.25, ti), s,v,p,k)
-  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.3, ti), s,v,p,k)
-  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.4, ti), s,v,p,k)
-  | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
+                                          new = (extrTime (speedandtime u)) + dt >= tact
+                                          collides =  collidesFigureDownSmooth (figureToDraw (plbly (getf(figure u)))) (board u)
+                                          paused = (extrSpeed(speedandtime u)) < 0
+
+
+
+--newTact::Gamestate -> Float -> Float -> Gamestate
+--newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k) dt tact
+--  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisStepped,k)
+--  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisStepped,k)
+--  | new = newTact (b, (Figure sha dir (f1,f2 + blockSize,f3):rest), (sp, 0), s,v,TetrisStepped,k) (dt + ti - tact) tact
+--  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisStepped,k)
+--  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisStepped,k)
+--                                        where
+--                                          new = ti + dt >= tact
+--                                          collides =  collidesFigureDown (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
+--                                          paused = sp < 0
+--newTact (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k) dt tact
+--  | paused = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti), s,v,TetrisSmooth,k)
+--  | new && collides = (deleteRows (sortRows (updateBoard (Figure sha dir (f1,f2,f3)) b)), rest, (sp, ti), s + 1,v,TetrisSmooth,k)
+--  | new = newTact (b, (Figure sha dir (f1,f2 + 1,f3):rest), (sp, 0), s,v,TetrisSmooth,k) (dt + ti - tact) tact
+--  | collides = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt + tact * 0.3), s,v,TetrisSmooth,k)
+--  | otherwise = (b, (Figure sha dir (f1,f2,f3):rest), (sp, ti + dt), s,v,TetrisSmooth,k)
+--                                        where
+--                                          new = ti + dt >= tact
+--                                          collides =  collidesFigureDownSmooth (figureToDraw (Figure sha dir (f1 ,f2 + blockSize,f3))) b
+--                                          paused = sp < 0
+
+
+newLevel::GameState->GameState
+newLevel u | l5 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.1 ,(extrTime (speedandtime u)))  }
+  | l4 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.15 ,(extrTime (speedandtime u)))  }
+  | l3 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.2 ,(extrTime (speedandtime u)))  }
+  | l2 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.25 ,(extrTime (speedandtime u)))  }
+  | l2 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.3 ,(extrTime (speedandtime u)))  }
+  | l1 = u{speedandtime = ((signum(extrSpeed (speedandtime u )))*0.4 ,(extrTime (speedandtime u)))  }
+  | otherwise = u
         where 
-          l5 = s >= 5000
-          l4 = s >= 3000 && s <= 5000
-          l3 = s >= 2000 && s <= 3000
-          l2 = s >= 1500 && s <= 2000
-          l1 = s >= 1000 && s <= 1500
+          l5 = (score u) >= 5000
+          l4 = (score u) >= 3000 && (score u) <= 5000
+          l3 = (score u) >= 2000 && (score u) <= 3000
+          l2 = (score u) >= 1500 && (score u) <= 2000
+          l1 = (score u) >= 1000 && (score u) <= 1500
+
+--newLevel::Gamestate -> Gamestate
+--newLevel (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
+--  | l5 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.1, ti), s,v,p,k)
+--  | l4 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.15, ti), s,v,p,k)
+--  | l3 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.2, ti), s,v,p,k)
+--  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.25, ti), s,v,p,k)
+--  | l2 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.3, ti), s,v,p,k)
+--  | l1 = (b, (Figure sha dir (f1,f2,f3)):rest, (signum(sp) * 0.4, ti), s,v,p,k)
+--  | otherwise = (b, (Figure sha dir (f1,f2,f3)):rest, (sp, ti), s,v,p,k)
+--        where 
+--          l5 = s >= 5000
+--          l4 = s >= 3000 && s <= 5000
+--          l3 = s >= 2000 && s <= 3000
+--          l2 = s >= 1500 && s <= 2000
+--          l1 = s >= 1000 && s <= 1500
 
 --Аргумент функции play, которая говорит, что длает каждая клавиша
 
@@ -1009,19 +1135,24 @@ handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) u  = dropit u (screenHeight -  (getc (getf (figure u))))
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'k') Down _ _ ) u = turn (fromGS u)
+handleTetris (EventKey (Char 'k') Down _ _ ) u = turn  u
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'p') Down _ _ ) u = tetrispause (fromGS u)
+handleTetris (EventKey (Char 'p') Down _ _ ) u = tetrispause  u
 handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 
-handleTetris (EventKey (MouseButton LeftButton) Up _ mouse) u =  (mouseToCell mouse  (fromGS u ))
+handleTetris (EventKey (MouseButton LeftButton) Up _ mouse) u =  (mouseToCell mouse   u )
 handleTetris  _ t = t  
 
 
 
-tetrispause :: Gamestate->GameState
-tetrispause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) =(toGS (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e,v,p,k))
+tetrispause :: GameState->GameState
+tetrispause u = u { speedandtime = pause (speedandtime u )}
+pause :: (Speed,Time) -> (Speed,Time)
+pause (sp, ti) = (-sp,ti)
+
+
+--tetrispause (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k) =(toGS (a,(Figure sha dir (b,c,z):rest),(- sp, ti),e,v,p,k))
 tetrTypbuttonx1 :: Float
 tetrTypbuttonx1 = 34
 tetrTypbuttonx2 :: Float
@@ -1050,17 +1181,35 @@ tetrMovebuttony2 = 290
 
 
 
-mouseToCell :: Point->Gamestate -> GameState
-mouseToCell (x, y) (a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k)  | (x> tetrTypbuttonx1 && x<tetrTypbuttonx2 && y > tetrTypbuttony1 && y < tetrTypbuttony2 ) =  (toGS(a,(Figure sha dir (b,c,z):rest),(sp, ti),e,switchTetrisType v,p,k))
+mouseToCell :: Point->GameState -> GameState
+mouseToCell (x, y) u  | (x> tetrTypbuttonx1 && x<tetrTypbuttonx2 && y > tetrTypbuttony1 && y < tetrTypbuttony2 ) = u{typerepres = switchTetrisType (typerepres u)} --(toGS(a,(Figure sha dir (b,c,z):rest),(sp, ti),e,switchTetrisType v,p,k))
                                                                        
-                                                                       | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 && p==TetrisStepped) =  (toGS(genEmptyBoard,rest,(0.01, 0),0,v,switchTetrisMove p,0.01))
-                                                                       | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 && p==TetrisSmooth) =  (toGS(genEmptyBoard,rest,(0.7, 0),0,v,switchTetrisMove p,0.7))
-                                                           |otherwise =  (toGS(a,(Figure sha dir (b,c,z):rest),(sp, ti),e,v,p,k))
+                                                                       | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 ) = chMoving u 
+                                                                       
+                                                           |otherwise =  u
 
 switchTetrisType :: TetrisType -> TetrisType
 switchTetrisType TetrisRect = TetrisRound
 switchTetrisType TetrisRound = TetrisRect
 
+chMoving:: GameState->GameState
+chMoving u |(typemoving u)==TetrisStepped = u{ board   = genEmptyBoard  
+                          , figure  = (rest  (figure u))
+                          , speedandtime   = (0.01, 0)
+                          , score    = 0
+                          
+                          ,typemoving =  switchTetrisMove (typemoving u)
+                          ,tactgamestate     = 0.01
+                          }
+
+             |otherwise =   u{ board   = genEmptyBoard  
+                          , figure  = (rest  (figure u))
+                          , speedandtime   = (0.7, 0)
+                          , score    = 0
+                          
+                          ,typemoving =  switchTetrisMove (typemoving u)
+                          ,tactgamestate     = 0.7
+                          }           
 
 switchTetrisMove :: TetrisMove -> TetrisMove
 switchTetrisMove TetrisStepped = TetrisSmooth
