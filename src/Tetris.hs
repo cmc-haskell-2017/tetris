@@ -19,7 +19,7 @@ run = do
 
 -- | Сложность ИИ. Сколько ходов ИИ делает за такт.
 difficulty :: Float
-difficulty = 0.3
+difficulty = 4
 
 -- | Сколько кадров в секунду отрисовывается.
 glob_fps :: Int
@@ -626,11 +626,13 @@ heightFigure (Figure _ _ c) = y c
 -- | в 'newTact' вызывается 'makeStep' n раз. Т.е ИИ делает n хода в такт. n зависит от сложности
 makeStep :: Gamestate -> Gamestate
 makeStep gs
+  | newStep   = gs 
   | needturn  = turn      gs
   | needleft  = moveLeft  gs
   | needright = moveRight gs
   | otherwise = dropit    gs (screenHeight - (heightFigure . curfig $ gs))
     where
+      newStep   = heightFigure (curfig  gs)  < 4 * blockSize 
       needturn  = turns  (bestStep gs) > 0
       needleft  = offset (bestStep gs) < 0
       needright = offset (bestStep gs) > 0
@@ -639,13 +641,17 @@ makeStep gs
 -- * Время
 -- =======================================
 
+makingSteps :: Int -> Gamestate -> Gamestate
+makingSteps 0 gs = gs
+makingSteps n gs = makingSteps (n - 1) (makeStep gs)
+
 -- | Новый такт.
 newTact :: Gamestate -> Float -> Float -> Gamestate
 newTact gs dt tact
   | paused = gs
   | new && collides = gs {board = deleteRows . sortRows . updateBoard $ gs, curfig = head (figures gs), figures = tail . figures $ gs, score = score gs + 1 }
   | new && null (steps gs) = newTact gs {steps = (listSteps difficulty)} dt tact 
-  | new = newTact (apply makeStep (head (steps gs)) gs {curfig = moveDownFigure (curfig gs), time = 0, steps = (tail . steps $ gs)}) (dt + (time gs) - tact) tact
+  | new = newTact (makingSteps (head (steps gs)) gs {curfig = moveDownFigure (curfig gs), time = 0, steps = (tail . steps $ gs)}) (dt + (time gs) - tact) tact
   | collides = gs {time = time gs + dt + tact * 0.3}
   | otherwise = gs {time = time gs + dt}
   where
