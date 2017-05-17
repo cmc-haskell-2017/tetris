@@ -19,7 +19,7 @@ run = do
 
 -- | Сложность ИИ. Сколько ходов ИИ делает за такт.
 difficulty :: Float
-difficulty = 40
+difficulty = 0.3
 
 -- | Сколько кадров в секунду отрисовывается.
 glob_fps :: Int
@@ -67,6 +67,7 @@ data Gamestate = Gamestate
   , speed   :: Speed    -- ^ Скорость падения фигуры.
   , time    :: Time     -- ^ Время с последнего такта.
   , score   :: Score    -- ^ Счет игрока.
+  , steps   :: [Int]    -- ^ Количество шагов ИИ
   }
   
 -- | Скорость (время между тактами => чем меньше, тем быстрее игра).
@@ -130,7 +131,7 @@ genEmptyBoard = [ (\x1 -> Coord {x = bs * x1, y = bs * 20, clr = 0}) dx | dx <- 
 
 -- | Генерируем игровую вселенную (пустая доска, бесконечный список фигур, начальные скорость, время и счет).
 genUniverse :: StdGen -> Gamestate
-genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_speed, time = 0, score = 0}
+genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_speed, time = 0, score = 0, steps = []}
 
 -- =========================================
 -- * Перемещения фигур.
@@ -464,8 +465,8 @@ updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
 -- не достигла ли фигура нижней границы.
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt gs
-  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_speed, score = 0, time = 0}
-  | otherwise = newLevel (newTact gs dt (speed gs) (listSteps difficulty))
+  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_speed, score = 0, time = 0, steps = []}
+  | otherwise = newLevel (newTact gs dt (speed gs))
 
 -- ===========================================
 -- * Искусственный интеллект
@@ -474,7 +475,7 @@ updateTetris dt gs
 -- Строт список длины 'n' из копий элемента 'a'
 listNum :: a -> Int -> [a]
 listNum _ 0 = []
-listNum x d = x : listNum x (d - 1)
+listNum e1 d = e1 : listNum e1 (d - 1)
 
 -- | В зависимости от сложности строит список количества ходов ИИ
 listSteps :: Float -> [Int]
@@ -483,20 +484,20 @@ listSteps d = distribute (listNum (floor d) 10) (round (d * 10) - (floor d) * 10
 -- | Равномерно распределяем ходы
 distribute :: [Int] -> Int -> [Int]
 distribute [] _ = []
-distribute [x] d = [x + d]
+distribute [e1] d = [e1 + d]
 distribute s d = distribute (evens s) (div d 2 + mod d 2) ++ distribute (odds s) (div d 2)
 
 -- | Оставляем в списке только эдементы на нечетных позициях
 evens :: [a] -> [a]
 evens [] = []
-evens [x] = [x]
-evens (e1:e2:xs) = e1 : evens xs
+evens [e1] = [e1]
+evens (e1:_:xs) = e1 : evens xs
 
 -- | Оставляем в списке только эдементы на четных позициях
 odds :: [a] -> [a]
 odds [] = []
-odds [x] = []
-odds (e1:e2:xs) = e2 : odds xs
+odds [_] = []
+odds (_:e2:xs) = e2 : odds xs
 
 -- | Оценка состояния доски, после сделанного хода.
 -- Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса.
@@ -639,14 +640,12 @@ makeStep gs
 -- =======================================
 
 -- | Новый такт.
-newTact :: Gamestate -> Float -> Float -> [Int] -> Gamestate
-newTact gs dt tact steps
+newTact :: Gamestate -> Float -> Float -> Gamestate
+newTact gs dt tact
   | paused = gs
   | new && collides = gs {board = deleteRows . sortRows . updateBoard $ gs, curfig = head (figures gs), figures = tail . figures $ gs, score = score gs + 1 }
---   new && null steps = newTact gs dt tact (listSteps difficulty)
-  | new = newTact (makeStep (makeStep (makeStep (makeStep  gs {curfig = moveDownFigure (curfig gs), time = 0})))) (dt + (time gs) - tact) tact (tail steps)
-  --   new = newTact (apply makeStep (head steps) gs {curfig = moveDownFigure (curfig gs), time = 0}) (dt + (time gs) - tact) tact (tail steps)
---  new = newTact (apply makeStep (div difficulty 10) gs {curfig = moveDownFigure (curfig gs), time = 0}) (dt + (time gs) - tact) tact
+  | new && null (steps gs) = newTact gs {steps = (listSteps difficulty)} dt tact 
+  | new = newTact (apply makeStep (head (steps gs)) gs {curfig = moveDownFigure (curfig gs), time = 0, steps = (tail . steps $ gs)}) (dt + (time gs) - tact) tact
   | collides = gs {time = time gs + dt + tact * 0.3}
   | otherwise = gs {time = time gs + dt}
   where
