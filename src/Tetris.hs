@@ -637,13 +637,14 @@ makeStep gs
       needleft  = offset (bestStep gs) < 0
       needright = offset (bestStep gs) > 0
 
--- ===========================================
--- * Время
--- =======================================
-
+-- | ИИ ходит.
 makingSteps :: Int -> Gamestate -> Gamestate
 makingSteps 0 gs = gs
 makingSteps n gs = makingSteps (n - 1) (makeStep gs)
+
+-- ===========================================
+-- * Время
+-- =======================================
 
 -- | Новый такт.
 newTact :: Gamestate -> Float -> Float -> Gamestate
