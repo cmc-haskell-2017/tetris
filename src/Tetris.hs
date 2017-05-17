@@ -17,6 +17,10 @@ run = do
 -- * Типы
 -- =========================================
 
+-- | Сложность ИИ. Сколько ходов ИИ делает за такт.
+difficulty :: Float
+difficulty = 40
+
 -- | Сколько кадров в секунду отрисовывается.
 glob_fps :: Int
 glob_fps = 60
@@ -461,11 +465,38 @@ updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt gs
   | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_speed, score = 0, time = 0}
-  | otherwise = newLevel (newTact gs dt (speed gs))
+  | otherwise = newLevel (newTact gs dt (speed gs) (listSteps difficulty))
 
 -- ===========================================
 -- * Искусственный интеллект
 -- =======================================
+
+-- Строт список длины 'n' из копий элемента 'a'
+listNum :: a -> Int -> [a]
+listNum _ 0 = []
+listNum x d = x : listNum x (d - 1)
+
+-- | В зависимости от сложности строит список количества ходов ИИ
+listSteps :: Float -> [Int]
+listSteps d = distribute (listNum (floor d) 10) (round (d * 10) - (floor d) * 10)
+
+-- | Равномерно распределяем ходы
+distribute :: [Int] -> Int -> [Int]
+distribute [] _ = []
+distribute [x] d = [x + d]
+distribute s d = distribute (evens s) (div d 2 + mod d 2) ++ distribute (odds s) (div d 2)
+
+-- | Оставляем в списке только эдементы на нечетных позициях
+evens :: [a] -> [a]
+evens [] = []
+evens [x] = [x]
+evens (e1:e2:xs) = e1 : evens xs
+
+-- | Оставляем в списке только эдементы на четных позициях
+odds :: [a] -> [a]
+odds [] = []
+odds [x] = []
+odds (e1:e2:xs) = e2 : odds xs
 
 -- | Оценка состояния доски, после сделанного хода.
 -- Мы хотим максисизировать количество удаленных строк, минимизировать количество дырок, минимизировать высоту тетриса.
@@ -591,7 +622,7 @@ genVariant gs dx r = Variant
 heightFigure :: Figure -> Int
 heightFigure (Figure _ _ c) = y c
 
--- | в 'newTact' вызывается 'makeStep' 4 раза. Т.е ИИ делает 4 хода в такт.
+-- | в 'newTact' вызывается 'makeStep' n раз. Т.е ИИ делает n хода в такт. n зависит от сложности
 makeStep :: Gamestate -> Gamestate
 makeStep gs
   | needturn  = turn      gs
@@ -608,11 +639,14 @@ makeStep gs
 -- =======================================
 
 -- | Новый такт.
-newTact :: Gamestate -> Float -> Float -> Gamestate
-newTact gs dt tact
+newTact :: Gamestate -> Float -> Float -> [Int] -> Gamestate
+newTact gs dt tact steps
   | paused = gs
   | new && collides = gs {board = deleteRows . sortRows . updateBoard $ gs, curfig = head (figures gs), figures = tail . figures $ gs, score = score gs + 1 }
-  | new = newTact (makeStep(makeStep(makeStep(makeStep gs {curfig = moveDownFigure (curfig gs), time = 0})))) (dt + (time gs) - tact) tact
+--   new && null steps = newTact gs dt tact (listSteps difficulty)
+  | new = newTact (makeStep (makeStep (makeStep (makeStep  gs {curfig = moveDownFigure (curfig gs), time = 0})))) (dt + (time gs) - tact) tact (tail steps)
+  --   new = newTact (apply makeStep (head steps) gs {curfig = moveDownFigure (curfig gs), time = 0}) (dt + (time gs) - tact) tact (tail steps)
+--  new = newTact (apply makeStep (div difficulty 10) gs {curfig = moveDownFigure (curfig gs), time = 0}) (dt + (time gs) - tact) tact
   | collides = gs {time = time gs + dt + tact * 0.3}
   | otherwise = gs {time = time gs + dt}
   where
@@ -656,4 +690,3 @@ handleTetris (EventKey (Char 'p') Down _ _ ) gs = gs {speed = - (speed gs)}
 handleTetris (EventKey (Char 'p') Up _ _ )   t  = t
 
 handleTetris  _ t = t
-
