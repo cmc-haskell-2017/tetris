@@ -17,10 +17,6 @@ run = do
 -- * Типы
 -- =========================================
 
--- | Сложность ИИ. Сколько ходов ИИ делает за такт.
-difficulty :: Float
-difficulty = 4
-
 -- | Сколько кадров в секунду отрисовывается.
 glob_fps :: Int
 glob_fps = 60
@@ -46,6 +42,9 @@ data Variant = Variant
 -- | Счёт.
 type Score = Int
 
+-- | Сложность ИИ.
+type Difficulty = Float
+
 -- | Координаты блока x, y и его цвет clr.
 data Coord = Coord 
   { x   :: Int  -- ^ Координата x.
@@ -61,13 +60,14 @@ type Time = Float
 -- '[Figure]' — бесконечный список фигур, в текущем состоянии берем первый элемент списка.
 --
 data Gamestate = Gamestate
-  { board   :: Board    -- ^ Доска.
-  , curfig  :: Figure   -- ^ Летящая фигура.
-  , figures :: [Figure] -- ^ Список следующих фигур.
-  , speed   :: Speed    -- ^ Скорость падения фигуры.
-  , time    :: Time     -- ^ Время с последнего такта.
-  , score   :: Score    -- ^ Счет игрока.
-  , steps   :: [Int]    -- ^ Количество шагов ИИ
+  { board       :: Board      -- ^ Доска.
+  , curfig      :: Figure     -- ^ Летящая фигура.
+  , figures     :: [Figure]   -- ^ Список следующих фигур.
+  , speed       :: Speed      -- ^ Скорость падения фигуры.
+  , time        :: Time       -- ^ Время с последнего такта.
+  , score       :: Score      -- ^ Счет игрока.
+  , steps       :: [Int]      -- ^ Количество шагов ИИ.
+  , difficulty  :: Difficulty -- ^ Сложность ИИ. Скорость совершения хода ИИ.
   }
   
 -- | Скорость (время между тактами => чем меньше, тем быстрее игра).
@@ -131,7 +131,8 @@ genEmptyBoard = [ (\x1 -> Coord {x = bs * x1, y = bs * 20, clr = 0}) dx | dx <- 
 
 -- | Генерируем игровую вселенную (пустая доска, бесконечный список фигур, начальные скорость, время и счет).
 genUniverse :: StdGen -> Gamestate
-genUniverse g = Gamestate {board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g, speed = init_speed, time = 0, score = 0, steps = []}
+genUniverse g = Gamestate { board = genEmptyBoard, figures = tail . initFigures $ g, curfig = head . initFigures $ g
+                          , speed = init_speed, time = 0, score = 0, steps = [], difficulty = 0}
 
 -- =========================================
 -- * Перемещения фигур.
@@ -433,20 +434,33 @@ drawBlockedFigure ((a, b, c, d)) = pictures
 drawTetris :: Gamestate-> Picture
 drawTetris gs = pictures
   [ drawFigure gs
-  , drawBoard . board $ gs
-  , drawScore . score $ gs
+  , drawBoard      . board       $ gs
+  , drawScore      . score       $ gs
+  , drawDifficulty . difficulty  $ gs
   ]
 
 -- | Рисуем счет.
 drawScore :: Score -> Picture
 drawScore scr = translate (-w) h (scale 30 30 (pictures
-  [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])             -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])      -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show scr))))    -- красный счёт
+  [ color yellow (polygon [ (0, 0.1),   (0, -2),     (4, -2),     (4, 0.1)   ])  -- ^ желтая рамка
+  , color black  (polygon [ (0.1, 0.2), (0.1, -1.9), (3.9, -1.9), (3.9, 0.2) ])  -- ^ чёрные внутренности
+  , translate 0.1 (-1.5) (scale 0.01 0.01 (color green (text (show scr))))       -- ^ зеленый счёт
   ]))
   where
     w = fromIntegral screenWidth  / 2
     h = fromIntegral screenHeight / 2
+
+-- | Рисуем сложность ИИ.
+drawDifficulty :: Difficulty -> Picture
+drawDifficulty dif = translate (-w) h (scale 30 30 (pictures
+  [ color yellow (polygon [ (7, 0.1),   (7, -2),     (10, -2),    (10, 0.1)  ])  -- ^ желтая рамка
+  , color black  (polygon [ (7.1, 0.2), (7.1, -1.9), (9.9, -1.9), (9.9, 0.2) ])  -- ^ чёрные внутренности
+  , translate 7.5 (-1.5) (scale 0.01 0.01 (color red (text (show dif))))         -- ^ красная сложность
+  ]))
+  where
+    w = fromIntegral screenWidth  / 2
+    h = fromIntegral screenHeight / 2
+
 
 -- =========================================
 -- * Просчёт кадров (обновление)
@@ -465,7 +479,8 @@ updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
 -- не достигла ли фигура нижней границы.
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt gs
-  | isGameOver gs = Gamestate {board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs, speed = init_speed, score = 0, time = 0, steps = []}
+  | isGameOver gs = Gamestate { board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs
+                              , speed = init_speed, score = 0, time = 0, steps = [], difficulty = difficulty gs}
   | otherwise = newLevel (newTact gs dt (speed gs))
 
 -- ===========================================
@@ -651,7 +666,7 @@ newTact :: Gamestate -> Float -> Float -> Gamestate
 newTact gs dt tact
   | paused = gs
   | new && collides = gs {board = deleteRows . sortRows . updateBoard $ gs, curfig = head (figures gs), figures = tail . figures $ gs, score = score gs + 1 }
-  | new && null (steps gs) = newTact gs {steps = (listSteps difficulty)} dt tact 
+  | new && null (steps gs) = newTact gs {steps = (listSteps (difficulty gs))} dt tact 
   | new = newTact (makingSteps (head (steps gs)) gs {curfig = moveDownFigure (curfig gs), time = 0, steps = (tail . steps $ gs)}) (dt + (time gs) - tact) tact
   | collides = gs {time = time gs + dt + tact * 0.3}
   | otherwise = gs {time = time gs + dt}
@@ -694,5 +709,11 @@ handleTetris (EventKey (Char 'k') Up _ _ )   t  = t
 
 handleTetris (EventKey (Char 'p') Down _ _ ) gs = gs {speed = - (speed gs)}
 handleTetris (EventKey (Char 'p') Up _ _ )   t  = t
+
+handleTetris (EventKey (Char 'w') Down _ _ ) gs = gs {difficulty = (difficulty gs) + 0.5}
+handleTetris (EventKey (Char 'w') Up _ _ )   t  = t
+
+handleTetris (EventKey (Char 's') Down _ _ ) gs = gs {difficulty = (difficulty gs) - 0.5}
+handleTetris (EventKey (Char 's') Up _ _ )   t  = t
 
 handleTetris  _ t = t
