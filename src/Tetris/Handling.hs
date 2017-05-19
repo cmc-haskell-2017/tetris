@@ -13,16 +13,24 @@ import Tetris.Colliding
 
 handleTetris :: Event -> GameState -> GameState
 
-handleTetris (EventKey (Char 'l') Down _ _) gs = moveRight gs
+handleTetris (EventKey (Char 'l') Down _ _) gs | paused = gs
+                                               | otherwise = moveRight gs
+            where paused = speed gs < 0
 handleTetris (EventKey (Char 'l') Up _ _) t = t
 
-handleTetris (EventKey (Char 'j') Down _ _)  gs  = moveLeft gs
+handleTetris (EventKey (Char 'j') Down _ _)  gs  | paused = gs
+                                                 | otherwise = moveLeft gs
+            where paused = speed gs < 0
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs@GameState{..} = dropit (screenHeight - (y $ coord $ head figures)) gs
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs | paused = gs
+                                                 | otherwise = dropit (screenHeight - (y $ coord $ head (figures gs))) gs
+            where paused = speed gs < 0
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
-handleTetris (EventKey (Char 'k') Down _ _ ) gs = turn gs
+handleTetris (EventKey (Char 'k') Down _ _ ) gs  | paused = gs
+                                                 | otherwise = turn gs
+            where paused = speed gs < 0
 handleTetris (EventKey (Char 'k') Up _ _ ) t = t
 
 handleTetris (EventKey (Char 'p') Down _ _ ) gs = pause gs

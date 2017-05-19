@@ -90,22 +90,22 @@ drawBoard bias s = pictures (map (drawBlock bias) s)
 
 magframe :: Int -> Int -> [Picture]
 magframe b c = 
-  [ color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c))
+  [ color black  (polygon [ (fromIntegral b,        fromIntegral (-c))
                             , (fromIntegral b,        fromIntegral (-c - 2))
                             , (fromIntegral (b + 30), fromIntegral (-c - 2))
                             , (fromIntegral (b + 30), fromIntegral (-c)) 
                             ])
-  , color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c))
+  , color black  (polygon [ (fromIntegral b,        fromIntegral (-c))
                             , (fromIntegral b,        fromIntegral (-c - 30))
                             , (fromIntegral (b + 2),  fromIntegral (-c - 30))
                             , (fromIntegral (b + 2),  fromIntegral (-c))
                             ])
-  , color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c - 28))
+  , color black  (polygon [ (fromIntegral b,        fromIntegral (-c - 28))
                             , (fromIntegral b,        fromIntegral (-c - 30))
                             , (fromIntegral (b + 30), fromIntegral (-c - 30))
                             , (fromIntegral (b + 30), fromIntegral (-c - 28))
                             ])
-  , color magenta  (polygon [ (fromIntegral (b + 28), fromIntegral (-c))
+  , color black  (polygon [ (fromIntegral (b + 28), fromIntegral (-c))
                             , (fromIntegral (b + 28), fromIntegral (-c - 30))
                             , (fromIntegral (b + 30), fromIntegral (-c - 30))
                             , (fromIntegral (b + 30), fromIntegral (-c)) 
@@ -114,13 +114,13 @@ magframe b c =
 
 -- | Сопоставляем числам цвета.
 numtocolor :: Int -> Color
-numtocolor 0 = azure
-numtocolor 1 = blue
-numtocolor 2 = yellow
-numtocolor 3 = red
-numtocolor 4 = green
-numtocolor 5 = orange
-numtocolor _ = white
+numtocolor 0 = makeColor 1 0.843137 0 1
+numtocolor 1 = makeColor 0 1 1 1
+numtocolor 2 = makeColor 0.627451 0.12549 0.941176 1
+numtocolor 3 = makeColor 0 0 0.803922 1
+numtocolor 4 = makeColor 1 0.647059 0 1
+numtocolor 5 = makeColor 0.196078 0.803922 0.196078 1
+numtocolor _ = makeColor 1 0 0 1
 
 -- | Рисуем блок.
 drawBlock :: Int -> Coord-> Picture
@@ -138,75 +138,6 @@ drawBlock bias crd
     b = x crd
     c = y crd
     clr1 = clr crd
-
-
-
--- drawBlock :: Int -> Coord -> Picture
-
--- drawBlock bias (b,c,1) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color blue  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
-
---    ]))
---     ]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2
--- drawBlock bias (b,c,2) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color yellow  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ]))]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2
--- drawBlock bias (b,c,3) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color red  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ]))]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2
--- drawBlock bias (b,c,4) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color green  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ]))]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2 
--- drawBlock bias (b,c,5) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color orange  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ]))]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2
-
-
--- drawBlock bias (b,c,_) =  pictures [ translate (-w) h (scale  1 1 (pictures
---  [ color white  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])            -- белая рамка
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (-c - 2)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 2),fromIntegral (-c-30 )), (fromIntegral  (b +2),fromIntegral (- c)) ])
---    ,color magenta  (polygon [ ( fromIntegral b, fromIntegral (-c-28)), (fromIntegral b, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c-28)) ])
---    ,color magenta  (polygon [ ( fromIntegral b+28, fromIntegral (-c)), (fromIntegral b+28, fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (-c - 30)), (fromIntegral  (b + 30),fromIntegral (- c)) ])
---    ]))]
---   where
---   w = fromIntegral screenWidth  / 2 + fromIntegral bias
---   h = fromIntegral screenHeight / 2
 
 
 drawFigure :: Int -> GameState ->  Picture
