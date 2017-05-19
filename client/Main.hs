@@ -55,8 +55,8 @@ handleTetrisMP  _ gs = return gs
 
 sendIvent::Text.Text -> MP_Gamestate -> IO MP_Gamestate
 sendIvent txt gs@MP_Gamestate{..}  = do
-	forkIO $ sendBinaryData connection txt
-	return gs
+  forkIO $ sendBinaryData connection txt
+  return gs
 
 
 renderTetris :: MP_Gamestate -> IO Picture

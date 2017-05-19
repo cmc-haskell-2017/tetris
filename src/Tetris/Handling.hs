@@ -3,11 +3,9 @@
 
 module Tetris.Handling where
 
-import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
+
 import Graphics.Gloss.Interface.Pure.Game
-import GHC.Float
+
 
 import Tetris.Types
 import Tetris.Drawing
@@ -34,7 +32,7 @@ handleTetris  _ t = t
 
 
 pause::GameState -> GameState
-pause gs@GameState{..} = GameState board figures (- speed) time score
+pause GameState{..} = GameState board figures (- speed) time score
 
 
 turn::GameState -> GameState

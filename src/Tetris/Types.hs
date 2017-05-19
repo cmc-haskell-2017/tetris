@@ -103,14 +103,6 @@ instance Show GameState where
     show time ++ " " ++
     show score ++ "end "
 
--- fromGS :: GameState -> Gamestate
--- fromGS GameState{..} = (board, figures, (speed, time), score)
-
-
--- toGS :: Gamestate -> GameState
--- toGS (board, figures, (speed, time), score) = GameState board figures speed time score
-
-
 toWeb :: GameState -> WebGS
 toWeb GameState{..} = WebGS board (take 10 figures) speed time score
 
@@ -150,20 +142,3 @@ instance Binary GSPair
 instance WebSocketsData GSPair where
   fromLazyByteString = decode
   toLazyByteString   = encode
-
-
--- (l, h + blockSize, c)
-
-
-
--- take2 :: (Int, Int, Int) -> Int
--- take2 (_, b, _) = b
-
-
-
--- fromWebGS :: WebGS -> Gamestate
--- fromWebGS WebGS{..} = (w_board, w_figures, (w_speed, w_time), w_score)
-
-
--- toWebGS :: Gamestate -> WebGS
--- toWebGS (board, figures, (speed, time), score) = WebGS board (take 10 figures) speed time score

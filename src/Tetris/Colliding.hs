@@ -3,16 +3,7 @@
 
 module Tetris.Colliding where
 
-import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
-import Graphics.Gloss.Interface.Pure.Game
-import GHC.Float
-
-
 import Tetris.Types
-import Tetris.Generating
-import Tetris.Drawing
 
 
 collidesBlock::Coord -> Bool

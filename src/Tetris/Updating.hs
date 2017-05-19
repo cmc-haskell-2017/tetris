@@ -1,12 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 module Tetris.Updating where
 
-import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
-import Graphics.Gloss.Interface.Pure.Game
-import GHC.Float
-
 import Tetris.Types
 import Tetris.Generating
 import Tetris.Drawing
@@ -16,7 +10,6 @@ import Tetris.Handling
 
 isGameOver::GameState -> Bool
 isGameOver GameState{..} = collidesFigureDown (figureToDraw (head $ tail $ figures)) board
-
 
 -- | Сортируем строки.
 sortRows :: Board -> Board
