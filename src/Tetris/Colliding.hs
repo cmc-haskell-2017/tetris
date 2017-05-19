@@ -1,3 +1,6 @@
+{-# LANGUAGE RecordWildCards #-}
+
+
 module Tetris.Colliding where
 
 import System.Random
@@ -13,30 +16,30 @@ import Tetris.Drawing
 
 
 collidesBlock::Coord -> Bool
-collidesBlock (a,b,z) | (a < 0) || (a  + blockSize > screenWidth) || (b < 0) || (b + blockSize > screenHeight) = True
+collidesBlock Coord{..} | (x < 0) || (x  + blockSize > screenWidth) || (y < 0) || (y + blockSize > screenHeight) = True
        |otherwise = False
 
 
 collidesBlockSides::Coord -> Board -> Bool
-collidesBlockSides (a,b,z) [] = (a < 0) || (a  + blockSize > screenWidth)
-collidesBlockSides (a,b,z) ((brda, brdb,z1):[]) = (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)
-collidesBlockSides (a,b,z) ((brda, brdb,z1):brds) | (a < 0) || (a  + blockSize > screenWidth) || (a==brda) && (b==brdb)  = True
-                                             | otherwise = collidesBlockSides (a,b,z) brds
+collidesBlockSides block [] = (x block < 0) || (x block  + blockSize > screenWidth)
+collidesBlockSides block (c:[]) = (x block < 0) || (x block + blockSize > screenWidth) || (x block == x c) && (y block == y c)
+collidesBlockSides block (c:brds) | (x block < 0) || (x block + blockSize > screenWidth) || (x block == x c) && (y block == y c)  = True
+                                      | otherwise = collidesBlockSides block brds
 
 
 collidesBlockDown::Coord -> Board-> Bool
-collidesBlockDown (a,b,z) []  =   (b + blockSize > screenHeight)
-collidesBlockDown (a,b,z) ((brda,brdb,z1):[])  =   ((b + blockSize > screenHeight) || (a==brda) && (b==brdb))
-collidesBlockDown (a,b,z) ((brda,brdb,z1):brds)  | (b + blockSize > screenHeight) || (a==brda) && (b==brdb)  = True
-                                            |  otherwise = collidesBlockDown (a,b,z) brds
+collidesBlockDown block []  =   (y block + blockSize > screenHeight)
+collidesBlockDown block (c:[])  =   ((y block + blockSize > screenHeight) || (x block == x c) && (y block == y c))
+collidesBlockDown block (c:brds)  | (y block + blockSize > screenHeight) || (x block == x c) && (y block == y c)  = True
+                                      |  otherwise = collidesBlockDown block brds
 
 
 
 collidesBlockUp::Coord -> Board-> Bool
-collidesBlockUp (a,b,z) []  =  b < 0
-collidesBlockUp (a,b,z) ((brda,brdb,z1):[])  =   (b < 0 && (b==brdb))
-collidesBlockUp (a,b,z) ((brda,brdb,z1):brds)  | b < 0 && (b==brdb)  = True
-                                          |  otherwise = collidesBlockUp (a,b,z) brds
+collidesBlockUp block []  =  y block < 0
+collidesBlockUp block (c:[])  =   y block < 0 && (y block == y c)
+collidesBlockUp block (c:brds)  | y block < 0 && (y block == y c)  = True
+                                          |  otherwise = collidesBlockUp block brds
 
 
 collidesFigure::BlockedFigure -> Board -> Bool

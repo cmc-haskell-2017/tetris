@@ -157,7 +157,7 @@ handlePlayerAction act name gs@GameState{..}
   | Text.head act == 'p' = pause gs 
   | otherwise = gs
     where
-      pts = (screenHeight - (take2 $ coord $ head figures))
+      pts = (screenHeight - (y $ coord $ head figures))
   -- return gs
 
 

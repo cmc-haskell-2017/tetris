@@ -21,7 +21,7 @@ handleTetris (EventKey (Char 'l') Up _ _) t = t
 handleTetris (EventKey (Char 'j') Down _ _)  gs  = moveLeft gs
 handleTetris (EventKey (Char 'j') Up _ _)  t  = t
 
-handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs@GameState{..} = dropit (screenHeight - (take2 $ coord $ head figures)) gs
+handleTetris(EventKey (SpecialKey KeySpace) Down _ _ ) gs@GameState{..} = dropit (screenHeight - (y $ coord $ head figures)) gs
 handleTetris(EventKey (SpecialKey KeySpace) Up _ _ ) t = t
 
 handleTetris (EventKey (Char 'k') Down _ _ ) gs = turn gs
@@ -83,4 +83,11 @@ moveRight gs@GameState{..} | collide = gs
       collide = collidesFigureSides (figureToDraw $ moveFigureRight $ head figures) board
 
 
+moveFigureDown :: Figure -> Figure
+moveFigureDown (Figure t d c) = Figure t d (Coord (x c) (y c + blockSize) (clr c))
 
+moveFigureRight :: Figure -> Figure
+moveFigureRight (Figure t d c) = Figure t d (Coord (x c + blockSize) (y c) (clr c))
+
+moveFigureLeft :: Figure -> Figure
+moveFigureLeft (Figure t d c) = Figure t d (Coord (x c - blockSize) (y c) (clr c))

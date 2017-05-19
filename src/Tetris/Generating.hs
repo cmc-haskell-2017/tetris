@@ -18,14 +18,17 @@ import Tetris.Drawing
 
 --На вход принимается случайное число от 0 до 6, которое определяет
 --Фигуру
-genFigure::Int -> Figure
-genFigure a | a== 0  =  Figure O DUp (div screenWidth 2, blockSize * 2,0) 
-            | a== 1  =  Figure I DUp (div screenWidth 2, blockSize * 2,1) 
-            | a== 2  =  Figure T DUp (div screenWidth 2, blockSize * 2,2) 
-            | a== 3  =  Figure J DUp (div screenWidth 2, blockSize * 2,3) 
-            | a== 4  =  Figure L DUp (div screenWidth 2, blockSize * 2,4) 
-            | a== 5  =  Figure S DUp (div screenWidth 2, blockSize * 2,5) 
-            | a== 6  =  Figure Z DUp (div screenWidth 2, blockSize * 2,6) 
+genFigure :: Int -> Figure
+genFigure a
+  | a == 0    = Figure O DUp startpos
+  | a == 1    = Figure I DUp startpos
+  | a == 2    = Figure T DUp startpos
+  | a == 3    = Figure J DUp startpos
+  | a == 4    = Figure L DUp startpos
+  | a == 5    = Figure S DUp startpos
+  | otherwise = Figure Z DUp startpos
+  where
+    startpos = Coord {x = div screenWidth 2, y = blockSize * 2, clr = a}
 
 -- | Инициализировать случайный бесконечный
 -- список чисел от 0 до 6 которые соответствуют фигурам
@@ -43,16 +46,6 @@ getrange = (0, 6)
 
 genEmptyBoard::Board
 genEmptyBoard = []
-
-genRows::Int->Int->[Row]
-genRows _ 0 = []
-genRows w h = (genRows w (h-1)) ++ [genRow w]
-
-
-genRow::Int->Row
-genRow 0 = []
-genRow w = (genRow (w-1)) ++ [Free]
-
 
 genUniverse::StdGen -> GameState
 genUniverse g = GameState genEmptyBoard (initFigures g) init_tact 0 0

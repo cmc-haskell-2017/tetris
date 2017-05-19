@@ -11,23 +11,47 @@ import Tetris.Types
 import Tetris.Generating
 import Tetris.Drawing
 import Tetris.Colliding
--- import Tetris.Handling
+import Tetris.Handling
 
 
 isGameOver::GameState -> Bool
 isGameOver GameState{..} = collidesFigureDown (figureToDraw (head $ tail $ figures)) board
 
 
+-- | Сортируем строки.
 sortRows :: Board -> Board
 sortRows []     = []
-sortRows ((brda,brdb,z):brds) = sortRows (filter (\(x,y,z) -> y > brdb) brds) ++ [(brda,brdb,z)] ++ sortRows (filter (\(x,y,z) -> y <= brdb) brds)
+sortRows (c : brds) = sortRows (filter (\c1 -> y c1 > y c) brds) ++ [c] ++ sortRows (filter (\c1 -> y c1 <= y c) brds)
 
-
+-- | Удалям заполненные строки.
 deleteRows :: Board -> Board
 deleteRows [] = []
-deleteRows ((brda,brdb,z):brds) | (length (filter (\(x,y,z) -> brdb == y) ((brda,brdb,z):brds)) == 10)  =  (deleteRows (map (\(x,y,z) -> (x, y + blockSize,z)) (filter (\(x,y,z) -> y < brdb) l)) ++ (filter (\(x,y,z) -> y > brdb) l))
-                              | otherwise = (filter (\(x,y,z) -> brdb == y) ((brda,brdb,z):brds)) ++ (deleteRows  (filter (\(x,y,z) -> brdb /= y) ((brda,brdb,z):brds)))                  -----   ToDo:   Обработать левый операнд аппенда.  После функции проверить, что между У нет зазоров.
-                         where l = (filter (\(x,y,z) -> brdb /= y) ((brda,brdb,z):brds))
+deleteRows (c : brds)
+  | isFullRow (row brd (y c)) = deleteRows . boardMoveDown $ (upperRows brd (y c)) ++ (lowerRows brd (y c))
+  | otherwise = (row brd (y c)) ++ (deleteRows (upperRows brd (y c)))
+  where 
+    brd = (c : brds)
+
+-- | Строки выше заданной строки.
+upperRows :: Board -> Int -> Board
+upperRows brd scope = (filter (\c1 -> y c1 < scope) brd)
+
+-- | Строки ниже заданной строки.
+lowerRows :: Board -> Int -> Board
+lowerRows brd scope = (filter (\c1 -> y c1 > scope) brd)
+
+-- | Сдвигаем строки доски вниз.
+boardMoveDown :: Board -> Board
+boardMoveDown [] = []
+boardMoveDown (c : brd) = c {y = (y c) + blockSize} : boardMoveDown brd
+
+-- | n-ая строка доски.
+row :: Board -> Int -> [Coord]
+row b n = (filter (\b1 -> n == y b1) b)
+
+-- | Заполнена ли доска?
+isFullRow :: [Coord] -> Bool
+isFullRow r = (length r) == 10
 
 --При нажатии клавиши "вниз" роняет фигуру 
 
@@ -40,7 +64,7 @@ vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
 vectolist (a,b,c,d) = [a,b,c,d]
 
 updateBoard::Figure -> Board ->Board
-updateBoard (Figure sha dir (b ,c,z)) a = a ++ vectolist (figureToDraw (Figure sha dir (b ,c,z)))
+updateBoard (Figure sha dir c) a = a ++ vectolist (figureToDraw (Figure sha dir c))
 
 --На основании прошедшего времени меняет скорость полета фигур
 updateSpeed::Time -> Speed -> Speed

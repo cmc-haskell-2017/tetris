@@ -3,67 +3,54 @@
 
 module Tetris.Types where
 
-import System.Random
-import Graphics.Gloss.Data.Vector
-import Graphics.Gloss.Geometry.Line
-import Graphics.Gloss.Interface.Pure.Game
-import GHC.Float
-
 import Data.Binary
 import Network.WebSockets
 import GHC.Generics
 
-glob_fps = 60::Int
-
 -- =========================================
--- Types
+-- Types and constants
 -- =========================================
 
+-- | frames per second
+glob_fps :: Int
+glob_fps = 60
+
+-- | length and width of the block in pixels
 blockSize :: Int
 blockSize = 30
 
-init_tact::Time
+-- | Initial speed af falling for a figure
+init_tact :: Speed
 init_tact = 0.7
 
-                               --data Shape = J | L | I | S | Z | O | T
-                               --         deriving (Eq, Show, Enum)
-
+-- | Name of the player in multiplayer mode (just for server)
 type PlayerName = String
 
--- Представление фигуры, как списка блоков
+-- | Representation of the board as a list of blockes
 type BlockedFigure = (Coord, Coord, Coord, Coord)
 
---Клетка заполнена?
-data Block = Free | Full
-         deriving(Eq, Show)
-
---Строки нашей доски
-type Row = [Block]
-
---Все поле
+-- | Representation of board as a list of fulfilled blocks in it
 type Board = [Coord]
 
---Счет
+-- | Score type
 type Score = Int
 
---Координаты фигуры, поворот однозначно определяется 
---их последовательностью
-type Coord = (Int, Int, Int)
+-- | Block type. Contains x and y coordinates of its left upper point and 
+-- integer representation of colour
+-- type Coord = (Int, Int, Int)
 
---время
+data Coord = Coord 
+  { x   :: Int  -- ^ Координата x.
+  , y   :: Int  -- ^ Координата y.
+  , clr :: Int  -- ^ Цвет блока.
+  } deriving(Eq, Show, Generic)
+
+instance Binary Coord
+
+-- | Type for time (passed from previous tact)
 type Time = Float
 
-
---Состояние игры в текущий момент(разделили доску и фигуру,
---чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
---оптимизировано)
---[Figure] - бесконечный список фигур, в текущем состоянии берем первый элемент списка
-----------------------------------------------------------------------------------------------------------------------------------------------------------
--- type Gamestate = (Board,  [Figure], (Speed, Time), Score)
-
-------------------------------------------------------------------------------------------------------------------------------------------------------------
-
---Скорость
+-- | Type for speed (duration on one tact)
 type Speed = Float
 
 --Для каждой фигуры свой тип, чтобы однозначно можно было 
@@ -109,12 +96,12 @@ data GameState = GameState
 
 
 instance Show GameState where
-	show GameState{..} = 
-		show board ++ " " ++
-		show (head figures) ++ " " ++ 
-		show speed ++ " " ++
-		show time ++ " " ++
-		show score ++ "end "
+  show GameState{..} = 
+    show board ++ " " ++
+    show (head figures) ++ " " ++ 
+    show speed ++ " " ++
+    show time ++ " " ++
+    show score ++ "end "
 
 -- fromGS :: GameState -> Gamestate
 -- fromGS GameState{..} = (board, figures, (speed, time), score)
@@ -142,12 +129,12 @@ data WebGS = WebGS
   } deriving (Generic)
 
 instance Show WebGS where
-	show WebGS{..} = 
-		show w_board ++ " " ++
-		show (head w_figures) ++ " " ++ 
-		show w_speed ++ " " ++
-		show w_time ++ " " ++
-		show w_score ++ "end "
+  show WebGS{..} = 
+    show w_board ++ " " ++
+    show (head w_figures) ++ " " ++ 
+    show w_speed ++ " " ++
+    show w_time ++ " " ++
+    show w_score ++ "end "
 
 instance Binary WebGS
 
@@ -165,19 +152,12 @@ instance WebSocketsData GSPair where
   toLazyByteString   = encode
 
 
+-- (l, h + blockSize, c)
 
 
-moveFigureDown :: Figure -> Figure
-moveFigureDown (Figure t d (l, h, c)) = Figure t d (l, h + blockSize, c)
 
-moveFigureRight :: Figure -> Figure
-moveFigureRight (Figure t d (l, h, c)) = Figure t d (l + blockSize, h, c)
-
-moveFigureLeft :: Figure -> Figure
-moveFigureLeft (Figure t d (l, h, c)) = Figure t d (l - blockSize, h, c)
-
-take2 :: (Int, Int, Int) -> Int
-take2 (a, b, c) = b
+-- take2 :: (Int, Int, Int) -> Int
+-- take2 (_, b, _) = b
 
 
 
