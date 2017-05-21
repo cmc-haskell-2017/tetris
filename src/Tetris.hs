@@ -10,8 +10,8 @@ run = do
  play display bgColor fps (genUniverse g) drawTetris handleTetris updateTetris
    where
     display = InWindow "Tetris" (screenWidth, screenHeight) (200, 200)
-    bgColor = black   -- цвет фона
-    fps     = glob_fps   -- кол-во кадров в секунду
+    bgColor = black     
+    fps     = glob_fps  
 
 -- =========================================
 -- * Типы
@@ -29,21 +29,16 @@ blockSize = 30
 init_speed :: Speed
 init_speed = 0.7
 
+-- | Ширина экрана.
+screenWidth :: Int
+screenWidth = 300
+
+-- | Высота экрана.
+screenHeight :: Int
+screenHeight = 600
+
 -- | Доска — список координат упавших блоков.
 type Board = [Coord]
-
--- | Вариант развития событий для хода ИИ (профит, смещение, количество поворотов).
-data Variant = Variant 
-  { profit :: Int  -- ^ Выгода хода.
-  , offset :: Int  -- ^ Смещение.
-  , turns  :: Int  -- ^ Количество поворотов.
-  }
-
--- | Счёт.
-type Score = Int
-
--- | Сложность ИИ.
-type Difficulty = Float
 
 -- | Координаты блока x, y и его цвет clr.
 data Coord = Coord 
@@ -52,12 +47,27 @@ data Coord = Coord
   , clr :: Int  -- ^ Цвет блока.
   }
 
+-- | Вариант развития событий для хода ИИ (профит, смещение, количество поворотов).
+data Variant = Variant 
+  { profit :: Int  -- ^ Выгода хода.
+  , offset :: Int  -- ^ Смещение.
+  , turns  :: Int  -- ^ Количество поворотов.
+  }
+
+-- | Скорость (время между тактами => чем меньше, тем быстрее игра).
+type Speed = Float
+
 -- | Время прошедшее с прошлого такта, сравнивается со скоростью для обновления такта.
 type Time = Float
 
+-- | Счёт.
+type Score = Int
+
+-- | Сложность ИИ.
+type Difficulty = Float
+
 -- | Состояние игры в текущий момент.
 -- Разделили доску и фигуру, чтобы при полете фигуры не мигала вся доска, также, чтобы было более оптимизировано.
--- '[Figure]' — бесконечный список фигур, в текущем состоянии берем первый элемент списка.
 --
 data Gamestate = Gamestate
   { board       :: Board      -- ^ Доска.
@@ -66,18 +76,13 @@ data Gamestate = Gamestate
   , speed       :: Speed      -- ^ Скорость падения фигуры.
   , time        :: Time       -- ^ Время с последнего такта.
   , score       :: Score      -- ^ Счет игрока.
-  , steps       :: [Int]      -- ^ Количество шагов ИИ.
+  , steps       :: [Int]      -- ^ Количество шагов ИИ в следующие 10 тактов.
   , difficulty  :: Difficulty -- ^ Сложность ИИ. Скорость совершения хода ИИ.
   }
   
--- | Скорость (время между тактами => чем меньше, тем быстрее игра).
-type Speed = Float
-
 -- | Тип фигуры соответствует букве на которую фигура похожа.
 -- Для каждого типа фигуры свой конструктор, 
--- чтобы однозначно можно было определить ее и тип операций над ней, 
--- например, фигуру I можно вращать произвольно только на расстоянии больше 4 клеток от края,
--- а фигуру O на расстоянии больше 2 клеток от края.
+-- чтобы однозначно можно было определить ее и тип операций над ней.
 data FigureType = O | I | T | J | L | S | Z
                       deriving(Eq, Show)
 
@@ -91,15 +96,9 @@ data Direction
 
 -- | Фигура определяется типом, направлением, координатами верхнего левого блока.
 data Figure = Figure FigureType Direction Coord
-  --deriving(Show)
 
--- | Ширина экрана.
-screenWidth :: Int
-screenWidth = 300
-
--- | Высота экрана.
-screenHeight :: Int
-screenHeight = 600
+-- | Координаты блоков фигуры.
+type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 -- =========================================
 -- * Генерация
@@ -137,9 +136,6 @@ genUniverse g = Gamestate { board = genEmptyBoard, figures = tail . initFigures 
 -- =========================================
 -- * Перемещения фигур.
 -- =========================================
-
--- | Координаты блоков фигуры.
-type BlockedFigure = (Coord, Coord, Coord, Coord)
 
 -- | Поворачивает фигуру : функция смотрит, какая ей дана фигура,
 -- и вычисляет расстояние до края доски и на основании этой информации поворачивает ее (если это можно сделать).
@@ -442,9 +438,9 @@ drawTetris gs = pictures
 -- | Рисуем счет.
 drawScore :: Score -> Picture
 drawScore scr = translate (-w) h (scale 30 30 (pictures
-  [ color yellow (polygon [ (0, 0.1),   (0, -2),     (4, -2),     (4, 0.1)   ])  -- ^ желтая рамка
-  , color black  (polygon [ (0.1, 0.2), (0.1, -1.9), (3.9, -1.9), (3.9, 0.2) ])  -- ^ чёрные внутренности
-  , translate 0.1 (-1.5) (scale 0.01 0.01 (color green (text (show scr))))       -- ^ зеленый счёт
+  [ color yellow (polygon [ (0, 0.1),   (0, -2),     (4, -2),     (4, 0.1)   ])  
+  , color black  (polygon [ (0.1, 0.2), (0.1, -1.9), (3.9, -1.9), (3.9, 0.2) ])  
+  , translate 0.1 (-1.5) (scale 0.01 0.01 (color green (text (show scr))))       
   ]))
   where
     w = fromIntegral screenWidth  / 2
@@ -453,9 +449,9 @@ drawScore scr = translate (-w) h (scale 30 30 (pictures
 -- | Рисуем сложность ИИ.
 drawDifficulty :: Difficulty -> Picture
 drawDifficulty dif = translate (-w) h (scale 30 30 (pictures
-  [ color yellow (polygon [ (7, 0.1),   (7, -2),     (10, -2),    (10, 0.1)  ])  -- ^ желтая рамка
-  , color black  (polygon [ (7.1, 0.2), (7.1, -1.9), (9.9, -1.9), (9.9, 0.2) ])  -- ^ чёрные внутренности
-  , translate 7.5 (-1.5) (scale 0.01 0.01 (color red (text (show dif))))         -- ^ красная сложность
+  [ color yellow (polygon [ (7, 0.1),   (7, -2),     (10, -2),    (10, 0.1)  ])  
+  , color black  (polygon [ (7.1, 0.2), (7.1, -1.9), (9.9, -1.9), (9.9, 0.2) ])  
+  , translate 7.5 (-1.5) (scale 0.01 0.01 (color red (text (show dif))))         
   ]))
   where
     w = fromIntegral screenWidth  / 2
