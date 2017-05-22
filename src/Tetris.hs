@@ -51,7 +51,8 @@ init_tact::Time
 init_tact = 0.7
 
 -- | Клетка заполнена?
-data Block = Free | Full
+data Block = Free  -- ^ Пустая.
+            | Full  -- ^ Заполнена.
          deriving(Eq, Show)
 
 -- | Строки нашей доски.
@@ -80,11 +81,13 @@ type Time = Float
 
 
 -- | Тип тетриса- Прямоугольный или Круговой.
-data TetrisType = TetrisRect | TetrisRound
+data TetrisType = TetrisRect   -- ^ Прямоугольный.
+                | TetrisRound  -- ^ Круговой.
     deriving(Eq, Show)
 
 -- | Тип тетриса - Ступенчатый или плавный.
-data TetrisMove = TetrisStepped | TetrisSmooth
+data TetrisMove = TetrisStepped -- ^ Ступенчатый.
+                 | TetrisSmooth -- ^ Плавный.
    deriving(Eq, Show)
 -- | Состояние игры в текущий момент(разделили доску и фигуру,
 -- чтобы при полете фигуры не мигала вся доска, также, чтобы было более 
@@ -96,13 +99,13 @@ type Gamestate = (Board,  [Figure], (Speed, Time), Score,TetrisType,TetrisMove,T
 
 -- | Состояние игры.
 data GameState = GameState
- {  board   :: Board
-  , figure :: [Figure]
-  , speedandtime   :: (Speed, Time)
-  , score   :: Score
-  ,typerepres::TetrisType
-  ,typemoving :: TetrisMove
-  ,tactgamestate :: Time
+ {  board   :: Board            -- ^ Доска.
+  , figure :: [Figure]            -- ^ Список фигур.
+  , speedandtime   :: (Speed, Time) -- ^ Время и скорость.
+  , score   :: Score            -- ^ Счет.
+  ,typerepres::TetrisType          -- ^ Тип представления.
+  ,typemoving :: TetrisMove       -- ^ Тип движения.
+  ,tactgamestate :: Time           -- ^ Время.
   } 
 
 -- | Перевод в старое состояние(для отлаживания).
@@ -134,11 +137,20 @@ type Speed = Float
 --а фигуру O на расстоянии больше 2 клеток от края.
 
 -- | Тип фигура.
-data FigureType = O | I | T | J | L | S | Z
+data FigureType = O -- ^ Квадрат.
+                 | I -- ^ Палка.
+                 | T -- ^ Т образная.
+                 | J -- ^ J образная.
+                 | L -- ^ L образная.
+                 | S -- ^ S образная.
+                 | Z-- ^ Z образная.
                       deriving(Eq, Show)
 
 -- | Тип направление фигуры.
-data Direction = DUp | DDown | DLeft | DRight
+data Direction = DUp -- ^ Вверх.
+               | DDown  -- ^ Вниз.
+               | DLeft -- ^ Влево.
+               | DRight  -- ^ Вправо.
                       deriving(Eq, Show)
 
 -- | Тип фигуры для игры.
@@ -467,7 +479,7 @@ bl  (Figure s t u)  | (s==O &&t == DDown)||(s== Z)||(s==S)||(s==J && t/=DUp)|| (
 plbl::Figure->Figure
 plbl  (Figure s t u)   = (Figure s t u{x = (x u) + blockSize})  
 
--- | Поворачиваем вправо в плавном в примоугольном.
+-- | Поворачиваем вправо в плавном в прямоугольном.
 moveRightSmoothRect ::GameState -> GameState
 moveRightSmoothRect u   | collidewall = u{   figure =cons (bl (getf(figure u))) (rest  (figure u))}
                     | collide = u
