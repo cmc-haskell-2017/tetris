@@ -111,7 +111,8 @@ fromGS GameState{..} = (board, figure, speedandtime, score, typerepres,typemovin
 
 -- | Перевод в новое состояние(для отлаживания).
 toGS :: Gamestate -> GameState
-toGS (board, figure, (speed, time), score, typerepres,typemoving,tactgamestate) = GameState board figure (speed, time) score  typerepres typemoving tactgamestate
+toGS (board, figure, (speed, time), score, typerepres,typemoving,tactgamestate) 
+        = GameState board figure (speed, time) score  typerepres typemoving tactgamestate
 
 -- | Перевод в старые координаты.
 fromCoord :: Coord -> Coord1
@@ -366,7 +367,7 @@ moveLeft u |((typemoving u)==TetrisStepped && (typerepres u)== TetrisRect) = mov
            |otherwise = moveLeftSmoothRound u
 
 
--- | Переещает фигуру влево в плавном.
+-- | Переещает фигуру влево в ступенчатом в прямоугольном.
 moveLeftSteppedRect ::GameState -> GameState
 moveLeftSteppedRect u   | collidewall = u{   figure =cons (mul8or9 (getf(figure u))) (rest  (figure u))}
                     | collide = u
@@ -377,6 +378,8 @@ moveLeftSteppedRect u   | collidewall = u{   figure =cons (mul8or9 (getf(figure 
     collidewall = collidesFigureSidesWallLeft (figureToDraw (minbl (getf(figure u)))) (board u)
 
 
+
+-- | Переещает фигуру влево в ступенчатом в круговом.
 moveLeftSteppedRound ::GameState -> GameState
 moveLeftSteppedRound u    = u{ figure = cons  (minbl (getf(figure u))) (rest  (figure u))}
 
@@ -407,7 +410,7 @@ rest [] = []
 cons ::Figure->[Figure]->[Figure]
 cons  a f = a:f
 
--- | Поворачиваем влево в плавном.
+-- | Поворачиваем влево в плавном в прямоугольном.
 moveLeftSmoothRect ::GameState -> GameState
 moveLeftSmoothRect u   | collidewall = u{   figure =cons (mul8or9 (getf(figure u))) (rest  (figure u))}
                    | collide = u
@@ -417,6 +420,8 @@ moveLeftSmoothRect u   | collidewall = u{   figure =cons (mul8or9 (getf(figure u
     collide = collidesFigureSidesSmooth (figureToDraw (minbl (getf(figure u)))) (board u)
     collidewall = collidesFigureSidesWallLeft (figureToDraw (minbl (getf(figure u)))) (board u)      
 
+
+-- | Поворачиваем влево в плавном в круговом.
 moveLeftSmoothRound ::GameState -> GameState
 moveLeftSmoothRound u   = u{ figure = cons  (minbl (getf(figure u))) (rest  (figure u))}
 
@@ -433,7 +438,7 @@ moveRight u |((typemoving u)==TetrisStepped && ((typerepres u) == TetrisRect)) =
 
 
 
--- | Поворачиваем вправо в ступенчатом.
+-- | Поворачиваем вправо в ступенчатом в прямоугольном.
 moveRightSteppedRect ::GameState -> GameState
 moveRightSteppedRect u   | collidewall = u{   figure =cons (bl (getf(figure u))) (rest  (figure u))}
                      | collide = u
@@ -444,7 +449,7 @@ moveRightSteppedRect u   | collidewall = u{   figure =cons (bl (getf(figure u)))
     collidewall = collidesFigureSidesWallRight (figureToDraw (plbl (getf(figure u)))) (board u)
 
 
-
+-- | Поворачиваем вправо в ступенчатом в круговом.
 moveRightSteppedRound ::GameState -> GameState
 moveRightSteppedRound u    = u{ figure = cons  (plbl (getf(figure u))) (rest  (figure u))}
 
@@ -462,7 +467,7 @@ bl  (Figure s t u)  | (s==O &&t == DDown)||(s== Z)||(s==S)||(s==J && t/=DUp)|| (
 plbl::Figure->Figure
 plbl  (Figure s t u)   = (Figure s t u{x = (x u) + blockSize})  
 
--- | Поворачиваем вправо в плавном.
+-- | Поворачиваем вправо в плавном в примоугольном.
 moveRightSmoothRect ::GameState -> GameState
 moveRightSmoothRect u   | collidewall = u{   figure =cons (bl (getf(figure u))) (rest  (figure u))}
                     | collide = u
@@ -473,7 +478,7 @@ moveRightSmoothRect u   | collidewall = u{   figure =cons (bl (getf(figure u))) 
     collidewall = collidesFigureSidesWallRight (figureToDraw (plbl (getf(figure u)))) (board u)   
 
 
-
+-- | Поворачиваем вправо в плавном в круговом.
 moveRightSmoothRound ::GameState -> GameState
 moveRightSmoothRound u    = u{ figure = cons  (plbl (getf(figure u))) (rest  (figure u))}
 
@@ -714,7 +719,7 @@ offsedge = 15
 -- | Рисуем блок в круговом тетрисе.
 drawBlockCircle :: Coord1-> Picture
 drawBlockCircle  (b,c,d) 
-                    |(b==270|| b==570) = 
+                    |(b==270|| b==570|| b==870||b== -30|| b== -330|| b== -630) = 
   pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
     (rotate (-specangel) (color (numtocolor d)   (thickArc (0) (angle) 
                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
@@ -728,22 +733,7 @@ drawBlockCircle  (b,c,d)
                        (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
     ]                 
     
-         |(b== -30|| b== -330)  = 
-  pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
-    (rotate (-specangel) (color (numtocolor d)   (thickArc (0) (angle) 
-                      (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
-   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) 
-                      ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
-   (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) 
-                      (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
-   (rotate (-specangel) (color magenta   (thickArc (0) (1) 
-                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
-    (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) 
-                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
-    ]                 
-
-
-
+        
      
                    |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
  [ 
