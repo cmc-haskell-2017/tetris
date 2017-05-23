@@ -11,8 +11,14 @@ import Tetris.Types
 import Tetris.Drawing
 import Tetris.Colliding
 
-handleTetris :: Event -> GameState -> GameState
 
+-- =========================================
+-- Handling
+-- =========================================
+
+
+-- | handling all events coming from keyboard (only for local game mode)
+handleTetris :: Event -> GameState -> GameState
 handleTetris (EventKey (Char 'l') Down _ _) gs | paused = gs
                                                | otherwise = moveRight gs
             where paused = speed gs < 0
@@ -39,13 +45,18 @@ handleTetris (EventKey (Char 'p') Up _ _ ) t = t
 handleTetris  _ t = t  
 
 
-pause::GameState -> GameState
+-- | pauses the game (in fact it just reverses the value of speed so
+-- the updating function knows that the game is paused
+pause :: GameState -> GameState
 pause GameState{..} = GameState board figures (- speed) time score
 
 
+-- | update gamestate for turning current figure to the right
 turn::GameState -> GameState
 turn GameState{..} = GameState board ((turnFigure board (head figures)) : (tail figures)) speed time score
 
+
+-- | actually turns given figure
 turnFigure :: Board -> Figure -> Figure
 turnFigure board (Figure t DUp c)    | collide1 = Figure t DUp c
                                      | otherwise = Figure t DRight c
@@ -66,8 +77,7 @@ turnFigure board (Figure t DLeft c)  | collide4 = Figure t DLeft c
 
 
 
--- (a,((Figure sha dir (b,c,z)):rest),d,e)
-
+-- | drops figure down to the board 
 dropit :: Int -> GameState -> GameState
 dropit pts GameState{..} | collide = GameState board figures speed time (score + div pts blockSize)                
                          | otherwise = dropit pts (GameState board ((moveFigureDown $ head figures) : tail figures) speed time score)
@@ -75,13 +85,15 @@ dropit pts GameState{..} | collide = GameState board figures speed time (score +
                                 collide = collidesFigureDown (figureToDraw (moveFigureDown $ head figures)) board
 
 
-
+-- | updates gamestate to move figure left
 moveLeft::GameState -> GameState
 moveLeft gs@GameState{..} | collide = gs
                           | otherwise = GameState board ((moveFigureLeft $ head figures) : (tail figures)) speed time score
     where 
       collide = collidesFigureSides (figureToDraw $ moveFigureLeft $ head figures) board
 
+
+-- | updates gamestate to move figure right
 moveRight::GameState -> GameState
 moveRight gs@GameState{..} | collide = gs
                            | otherwise = GameState board ((moveFigureRight $ head figures) : (tail figures)) speed time score
@@ -89,11 +101,16 @@ moveRight gs@GameState{..} | collide = gs
       collide = collidesFigureSides (figureToDraw $ moveFigureRight $ head figures) board
 
 
+-- | just moves given figure down for one blocksize
 moveFigureDown :: Figure -> Figure
 moveFigureDown (Figure t d c) = Figure t d (Coord (x c) (y c + blockSize) (clr c))
 
+
+-- | just moves given figure right for one blocksize
 moveFigureRight :: Figure -> Figure
 moveFigureRight (Figure t d c) = Figure t d (Coord (x c + blockSize) (y c) (clr c))
 
+
+-- | just moves given figure right for one blocksize
 moveFigureLeft :: Figure -> Figure
 moveFigureLeft (Figure t d c) = Figure t d (Coord (x c - blockSize) (y c) (clr c))

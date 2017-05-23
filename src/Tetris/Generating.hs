@@ -10,8 +10,8 @@ import Tetris.Types
 -- Generating
 -- =========================================
 
---На вход принимается случайное число от 0 до 6, которое определяет
---Фигуру
+
+-- | generating new figure from random integer number
 genFigure :: Int -> Figure
 genFigure a
   | a == 0    = Figure O DUp startpos
@@ -24,27 +24,30 @@ genFigure a
   where
     startpos = Coord {x = div screenWidth 2, y = blockSize * 2, clr = a}
 
--- | Инициализировать случайный бесконечный
--- список чисел от 0 до 6 которые соответствуют фигурам
-initFigures :: StdGen -> [Figure]
-initFigures g = map genFigure
-  (randomRs getrange g)
 
--- диапазон генерации случайных чисел
+-- | building the infinite list of figures by applying the "fegFigure" function
+-- to infinite list of random numbers
+initFigures :: StdGen -> [Figure]
+initFigures g = map genFigure (randomRs getrange g)
+
+
+-- | range for random number generation
 getrange :: (Int, Int)
 getrange = (0, 6)
   
 
 
---Заполняем доску пустыми значениями и генерируем бесконечное количество фигур
-
+-- | setting up an empty board as an empty list
 genEmptyBoard::Board
 genEmptyBoard = []
 
+
+-- | generating the start position of universe - empty board and infinite list of figures
 genUniverse::StdGen -> GameState
 genUniverse g = GameState genEmptyBoard (initFigures g) init_tact 0 0
 
 
+-- | generating empty universe - without any figures (just for client-serer thing)
 genEmptyUniverse::StdGen -> GameState
 genEmptyUniverse _ = GameState genEmptyBoard [] init_tact 0 0
 

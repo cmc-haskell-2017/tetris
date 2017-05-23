@@ -53,17 +53,15 @@ type Time = Float
 -- | Type for speed (duration on one tact)
 type Speed = Float
 
---Для каждой фигуры свой тип, чтобы однозначно можно было 
---определить ее и тип операций над ней, например, фигуру I можно вращать
---произвольно только на расстоянии больше 4 клеток от края,
---а фигуру O на расстоянии больше 2 клеток от края
-
+-- | defining differrent shapes of figures
 data FigureType = O | I | T | J | L | S | Z
                       deriving(Generic, Eq, Show)
 
+-- | defines direction of the figure
 data Direction = DUp | DDown | DLeft | DRight
                       deriving(Generic, Eq, Show)
 
+-- | the figure data type
 data Figure = Figure 
   {
     f_type      :: FigureType 
@@ -85,7 +83,7 @@ screenHeight :: Int
 screenHeight = 600
 
 
--- this should replace current gamestate (tuple)
+-- | data type for a gamestate
 data GameState = GameState
  {  board   :: Board
   , figures :: [Figure]
@@ -111,7 +109,8 @@ fromWeb :: WebGS -> GameState
 fromWeb WebGS{..} = GameState w_board w_figures w_speed w_time w_score
 
 
-
+-- | gamestate type which can be transferred through the websockets
+-- only required for cleint-server game mode
 data WebGS = WebGS
   { w_board   :: Board
   , w_figures :: [Figure]
@@ -130,11 +129,9 @@ instance Show WebGS where
 
 instance Binary WebGS
 
-instance WebSocketsData WebGS where
-  fromLazyByteString = decode
-  toLazyByteString   = encode
 
-
+-- | data type for a pair of web-transmittable game states
+-- as we usually tranferr those in pairs
 data GSPair = GSPair WebGS WebGS deriving(Generic)
 
 instance Binary GSPair
