@@ -531,8 +531,8 @@ collidesBlockDown block (c:brds)  | ((y block + blockSize > screenHeight) || (x 
 -- | Проверка, пересекает ли блок пол или доску в плавном.
 collidesBlockDownSmooth::Coord -> Board-> Bool
 collidesBlockDownSmooth u []  =   ((y u)  > screenHeight)|| ((y u) < 0)
-collidesBlockDownSmooth u (u1:[])  =   (((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0)
-collidesBlockDownSmooth u (u1:brds)  |  (((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0) =True
+collidesBlockDownSmooth u (u1:[])  =   ((((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0) || (((x u) + 300) == x u1 && (y u == y u1)) || (((x u) - 300)== x u1 && (y u == y u1)))
+collidesBlockDownSmooth u (u1:brds)  |  ((((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0)|| (((x u) + 300) == x u1 && (y u == y u1)) || (((x u) - 300)== x u1 && (y u == y u1))) =True
                                             |  otherwise = collidesBlockDownSmooth u brds
 
 -- | Проверка, пересекается ли блок потолок или доску.
