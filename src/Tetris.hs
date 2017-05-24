@@ -245,16 +245,16 @@ genUniverse g = GameState{ board   = genEmptyBoard
 
 -- | Поворачиваем фигуру.
 turn::GameState -> GameState
-turn u |(typemoving u)== TetrisStepped = turnStepped u 
+turn u   |(typerepres u) == TetrisRound =  turnRound u
+         |(typemoving u)== TetrisStepped = turnStepped u 
         |otherwise = turnSmooth u
-
-
+-- | Поворачиваем фигуру в круговом
+turnRound :: GameState -> GameState
+turnRound u= u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
 -- | Поворачиваем фигуру в ступенчатом тетрисе.
 turnStepped::GameState -> GameState
-turnStepped u | collide1 = u 
-       | otherwise= u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
-       where 
-                    collide1 = collidesFigure (figureToDraw (chRotation (getf(figure u)))) (board u)
+turnStepped u = u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
+       
 
 -- | Изменяем состояние поворот.
 chRotation:: Figure->Figure
@@ -266,13 +266,8 @@ chRotation (Figure t DLeft c) = (Figure t DUp c)
 
 -- | Поворачиваем фигуру в палвном тетрисе.
 turnSmooth::GameState -> GameState
-turnSmooth u | collide1 = u 
-       | otherwise= u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
-       where 
-                    collide1 = collidesFigureSmooth (figureToDraw (chRotation (getf(figure u)))) (board u)
-
-
-
+turnSmooth u = u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
+      
 
 
 -- =========================================
@@ -529,8 +524,8 @@ collidesBlockSidesSmooth u (u1:brds) | ((x u) < 0) || ((x u)  + blockSize > scre
 -- | Проверка, пересекает ли блок пол или доску в ступенчатом.
 collidesBlockDown::Coord -> Board-> Bool
 collidesBlockDown block []  =   (y block + blockSize > screenHeight)
-collidesBlockDown block (c:[])  =   ((y block + blockSize > screenHeight) || (x block == x c) && (y block == y c))
-collidesBlockDown block (c:brds)  | (y block + blockSize > screenHeight) || (x block == x c) && (y block == y c)  = True
+collidesBlockDown block (c:[])  =   ((y block + blockSize > screenHeight) || ((x block == x c) && (y block == y c)) || (((x block) + 300) == x c && (y block == y c)) || (((x block) - 300)== x c && (y block == y c)))
+collidesBlockDown block (c:brds)  | ((y block + blockSize > screenHeight) || (x block == x c) && (y block == y c)|| (((x block) + 300) == x c && (y block == y c)) || (((x block) - 300)== x c && (y block == y c)))  = True
                                       |  otherwise = collidesBlockDown block brds
 
 -- | Проверка, пересекает ли блок пол или доску в плавном.
@@ -636,7 +631,7 @@ row b n = (filter (\b1 -> n == y b1) b)
 
 -- | Заполнена ли доска?
 isFullRow :: [Coord] -> Bool
-isFullRow r = (length r) == 10
+isFullRow r = (length r) >= 10
 
 
 -- | При нажатии клавиши "вниз" роняет фигуру. 
