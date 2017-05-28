@@ -266,7 +266,7 @@ chRotation (Figure t DLeft c) = (Figure t DUp c)
 
 -- | Поворачиваем фигуру в палвном тетрисе.
 turnSmooth::GameState -> GameState
-turnSmooth u = u{figure = cons  (chRotation (getf(figure u)))   (rest  (figure u))}
+turnSmooth u = u{figure = cons  (chRotation (getf(figure u))) (rest  (figure u))}
       
 
 
@@ -1001,34 +1001,26 @@ updateTetris dt u |(typemoving u) == TetrisStepped = updateTetrisStepped dt u
 
 -- | Обновить ступенчатый.
 updateTetrisStepped :: Float -> GameState -> GameState 
-updateTetrisStepped dt u |gameover =   u{ board   = genEmptyBoard  
-                          , figure  = (rest  (figure u))
-                          , speedandtime   = (0.7, 0)
-                          , score    = 0
-                          
-                          
-                          ,tactgamestate     = 0.7
-                          }  
+updateTetrisStepped dt u |gameover = genNewUniverse u (0.7)  
                     |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) ) 
-                    where
-                                        gameover = isGameOver u   
+                               where
+                              gameover = isGameOver u   
 
 -- | Обновить плавный.
 updateTetrisSmooth :: Float -> GameState -> GameState 
-updateTetrisSmooth dt u |gameover =   u{ board   = genEmptyBoard  
-                          , figure  = (rest  (figure u))
-                          , speedandtime   = (0.01, 0)
-                          , score    = 0
-                          
-                          
-                          ,tactgamestate     = 0.01
-                          }  
+updateTetrisSmooth dt u |gameover = genNewUniverse u (0.01)  
                     |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) )                                
-               where
-                                        gameover = isGameOver u   
+                       where
+                       gameover = isGameOver u   
 
 
-
+genNewUniverse :: GameState ->Float -> GameState
+genNewUniverse u fl = u{ board   = genEmptyBoard  
+                          , figure  = (rest  (figure u))
+                          , speedandtime   = (fl, 0)
+                          , score    = 0                                    
+                          ,tactgamestate     = fl
+                          }  
 
 
 
@@ -1081,10 +1073,10 @@ newTactStepped u dt tact  | paused =u
                       speedandtime = chZ (speedandtime u)} (dt + (extrTime (speedandtime u)) - tact) tact
   | collides = u{speedandtime = (chSpeedAndTime (speedandtime u) tact dt) }
   | otherwise = u{speedandtime = pldtSpeedAndTime (speedandtime u) dt}
-                             where
-                               new = (extrTime (speedandtime u)) + dt >= tact
-                               collides =  collidesFigureDown (figureToDraw (plbly (getf(figure u)))) (board u)
-                               paused = (extrSpeed(speedandtime u)) < 0
+                    where
+                     new = (extrTime (speedandtime u)) + dt >= tact
+                     collides =  collidesFigureDown (figureToDraw (plbly (getf(figure u)))) (board u)
+                     paused = (extrSpeed(speedandtime u)) < 0
 
 -- | Новый такст в плавном.
 newTactSmooth :: GameState -> Float -> Float -> GameState
@@ -1098,10 +1090,10 @@ newTactSmooth u dt tact  | paused =u
                       speedandtime = chZ (speedandtime u)} (dt + (extrTime (speedandtime u)) - tact) tact
   | collides = u{speedandtime = (chSpeedAndTime (speedandtime u) tact dt) }
   | otherwise = u{speedandtime = pldtSpeedAndTime (speedandtime u) dt}
-                            where
-                             new = (extrTime (speedandtime u)) + dt >= tact
-                             collides =  collidesFigureDownSmooth (figureToDraw (plbly (getf(figure u)))) (board u)
-                             paused = (extrSpeed(speedandtime u)) < 0
+                where
+                new = (extrTime (speedandtime u)) + dt >= tact
+                collides =  collidesFigureDownSmooth (figureToDraw (plbly (getf(figure u)))) (board u)
+                paused = (extrSpeed(speedandtime u)) < 0
 
 
 
@@ -1170,54 +1162,38 @@ pause :: (Speed,Time) -> (Speed,Time)
 pause (sp, ti) = (-sp,ti)
 
 
--- | Координата кнопки выбора типа тетриса(прямоугольный или круговой) x1.
-tetrTypbuttonx1 :: Float
-tetrTypbuttonx1 = 34
-
--- | Координата кнопки выбора типа тетриса(прямоугольный или круговой) x2.
-tetrTypbuttonx2 :: Float
-tetrTypbuttonx2 = 100
  
 -- | Вытащить y. 
 getc :: Figure-> Int
 getc  (Figure _ _ u) = (y u)
 
--- | Координата кнопки выбора типа тетриса(прямоугольный или круговой) y1.
-tetrTypbuttony1 :: Float
-tetrTypbuttony1 = 250
+
+-- | Координаты кнопки type x1,x2 ,y1,y2
+tetrTypbutton::(Float,Float,Float,Float)
+tetrTypbutton = (34,100,250,290)
 
 
--- | Координата кнопки выбора типа тетриса(прямоугольный или круговой) y2.
-tetrTypbuttony2 :: Float
-tetrTypbuttony2 = 290
 
 
--- | Координата кнопки выбора типа тетриса(ступенчаиый или плавный) x1.
-tetrMovebuttonx1 :: Float
-tetrMovebuttonx1 = 101
 
--- | Координата кнопки выбора типа тетриса(ступенчаиый или плавный) x2.
-tetrMovebuttonx2 :: Float
-tetrMovebuttonx2 = 148
+-- | Координаты кнопки move x1,x2 ,y1,y2
+tetrMoveButton ::(Float,Float,Float,Float)
+tetrMoveButton = (101,148,250,290)
 
--- | Координата кнопки выбора типа тетриса(ступенчаиый или плавный) y1.
-tetrMovebuttony1 :: Float
-tetrMovebuttony1 = 250
-
-
--- | Координата кнопки выбора типа тетриса(ступенчаиый или плавный) y2.
-tetrMovebuttony2 :: Float
-tetrMovebuttony2 = 290
 
 
 -- | Обрабатываем нажатие мышки на кнопки.
 mouseToCell :: Point->GameState -> GameState
 mouseToCell (x, y) u  
-         | (x> tetrTypbuttonx1 && x<tetrTypbuttonx2 && y > tetrTypbuttony1 && y < tetrTypbuttony2 ) =
+         | onTypeButton (x,y) tetrTypbutton =
                                         u{typerepres = switchTetrisType (typerepres u)}                                                               
-         | (x> tetrMovebuttonx1 && x<tetrMovebuttonx2 && y > tetrMovebuttony1 && y < tetrMovebuttony2 ) = chMoving u 
+         | onMoveButton (x,y) tetrMoveButton = chMoving u 
          |otherwise =  u
+onTypeButton::Point -> (Float,Float,Float,Float) -> Bool
+onTypeButton (x,y)  (x1,x2,y1,y2)=(x> x1 && x<x2 && y > y1 && y < y2 ) 
 
+onMoveButton ::Point -> (Float,Float,Float,Float) -> Bool
+onMoveButton (x,y)  (x1,x2,y1,y2)=(x> x1 && x<x2 && y > y1 && y < y2 )                               
 -- | Изменить тип тетриса(прямоугольный или круговой).
 switchTetrisType :: TetrisType -> TetrisType
 switchTetrisType TetrisRect = TetrisRound
