@@ -42,6 +42,64 @@ screenWidthreal = 800
 screenHeightreal :: Int
 screenHeightreal = 800
 
+-- | Координаты кнопки type x1,x2 ,y1,y2
+tetrTypbutton::(Float,Float,Float,Float)
+tetrTypbutton = (34,100,250,290)
+
+
+-- | Дллина блока в круговом тетрисе.
+angle :: Float
+angle = 36
+
+-- | Размер блока во Float.
+blockSizeFloat :: Float
+blockSizeFloat = 30
+
+-- | Угол, который приходиться рисовать отдельно, т.к. функция
+-- ThickArc рисует его с другой стороны.
+specangel :: Float
+specangel = 324
+
+-- | Смещение.
+offset2 :: Float
+offset2 = 100
+
+-- | Масштаб для риования.
+myscale :: Float
+myscale = 2.3
+
+-- | Подходящий размер.
+sizefit ::Float
+sizefit = 5
+
+-- | Подходящий размер в Int.
+sizefitInt ::Int
+sizefitInt = 5
+
+-- | Другое смещение
+offsedge ::Int
+offsedge = 15
+
+-- | Ширина рамки кругового тетриса 2
+thicknessOne::Float
+thicknessOne = 6
+
+-- | Ширина рамки кругового тетриса 2
+thicknessTwo::Float
+thicknessTwo = 2
+
+-- | Первый такт ступенчатого тетриса
+inintTactStepped::Float
+inintTactStepped = 0.7
+
+-- | Первый такт плавного тетриса
+inintTactSmooth::Float
+inintTactSmooth = 0.01
+
+-- | Координаты кнопки move x1,x2 ,y1,y2
+tetrMoveButton ::(Float,Float,Float,Float)
+tetrMoveButton = (101,148,250,290)
+
 -- | Размер блока в фигуре.
 blockSize :: Int
 blockSize = 30
@@ -49,6 +107,54 @@ blockSize = 30
 -- | Начальная скорость падения фигуры.
 init_tact::Time
 init_tact = 0.7
+
+-- | Для плавного тетриса
+conSmooth:: Float
+conSmooth = 225
+
+-- | Для фона кругового тетриса
+conCircleB:: Float
+conCircleB = 205
+
+-- | Для кругового тетриса
+conCircle:: Float
+conCircle = 123
+
+-- | Для меню тетриса ступенчатого
+conRecMenu:: Float
+conRecMenu =113
+
+-- | Масштаб счета
+scaleSc::Float
+scaleSc = 0.01
+
+-- | На сколько делить ширину экрана
+transl::Float
+transl = 2
+
+-- | На сколько увеличить рамку позади
+scaleBackGr::Float
+scaleBackGr = 1.3
+
+-- | Масштаб текста
+scaleT::Float
+scaleT = 0.008
+
+-- | Масштаб текста в гладком тетрисе
+scaleTSmooth::Float
+scaleTSmooth = 13
+
+-- | Масштаб рамки позади
+transtBackGround::Float
+transtBackGround = -100
+
+-- | Масштаб текста
+translateT::Float
+translateT = -1.5
+
+-- | Прозрачность менб
+alpha::Float
+alpha = 0.7
 
 -- | Клетка заполнена?
 data Block = Free  -- ^ Пустая.
@@ -307,25 +413,25 @@ figureToDrawI (Figure _ d c)
 -- | Готовим левый зигзаг к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawZ :: Figure -> BlockedFigure
 figureToDrawZ (Figure _ d c) 
-  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c - bs}, c {x = x c - bs}, c,      c {y = y c + bs})
-  | otherwise                  = (c {x = x c - bs},      c,      c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
+  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c - bs},c {x = x c - bs}, c,c {y = y c + bs})
+  | otherwise                  = (c {x = x c - bs},c,c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
   where
     bs = blockSize
 
 -- | Готовим правый зигзаг к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawS :: Figure -> BlockedFigure
 figureToDrawS (Figure _ d c) 
-  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c + bs}, c {x = x c - bs}, c,      c {y = y c - bs})
-  | otherwise                  = (c {x = x c - bs},      c,      c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
+  | (d == DUp) || (d == DDown) = (c {x = x c - bs, y = y c + bs}, c {x = x c - bs}, c, c {y = y c - bs})
+  | otherwise                  = (c {x = x c - bs},c, c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
   where
     bs = blockSize
 
 -- | Готовим Г-образную фигуру к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawJ :: Figure -> BlockedFigure
 figureToDrawJ (Figure _ d c) 
-  | d == DDown  = (c {x = x c - bs, y = y c - bs}, c {y = y c - bs}, c,      c {y = y c + bs})
-  | d == DUp    = (c {y = y c - bs},      c,      c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
-  | d == DRight = (c {x = x c - bs},      c,      c {x = x c + bs}, c {x = x c + bs, y = y c - bs})
+  | d == DDown  = (c {x = x c - bs, y = y c - bs}, c {y = y c - bs}, c, c {y = y c + bs})
+  | d == DUp    = (c {y = y c - bs},c,c {y = y c + bs}, c {x = x c + bs, y = y c + bs})
+  | d == DRight = (c {x = x c - bs},c,c {x = x c + bs}, c {x = x c + bs, y = y c - bs})
   | otherwise   = (c {x = x c - bs, y = y c + bs}, c {x = x c - bs}, c,      c {x = x c + bs})
   where
     bs = blockSize
@@ -333,9 +439,9 @@ figureToDrawJ (Figure _ d c)
 -- | Готовим L-образную фигуру к отрисовке. Возвращаем координаты 4 блоков.
 figureToDrawL :: Figure -> BlockedFigure
 figureToDrawL (Figure _ d c) 
-  | d == DDown  = (c {y = y c + bs},      c,      c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
-  | d == DUp    = (c {y = y c - bs},      c,      c {y = y c + bs}, c {x = x c - bs, y = y c + bs})
-  | d == DRight = (c {x = x c - bs},      c,      c {x = x c + bs}, c {x = x c + bs, y = y c + bs})
+  | d == DDown  = (c {y = y c + bs},c,c {y = y c - bs}, c {x = x c + bs, y = y c - bs})
+  | d == DUp    = (c {y = y c - bs},c,c {y = y c + bs}, c {x = x c - bs, y = y c + bs})
+  | d == DRight = (c {x = x c - bs},c,c {x = x c + bs}, c {x = x c + bs, y = y c + bs})
   | otherwise   = (c {x = x c - bs, y = y c - bs}, c {x = x c - bs}, c,      c {x = x c + bs})
   where
     bs = blockSize
@@ -398,8 +504,11 @@ moveLeftSteppedRound u    = u{ figure = cons  (minbl (getf(figure u))) (rest  (f
 -- | В зависимости от типа фигуры решаем, на сколько перемещать
 -- до начала, если пересекли границe.
 mul8or9::Figure->Figure
-mul8or9  (Figure s t u)   |( s==O )|| (s==Z && (t /= DUp && t/=DDown))||(s==S && (t/= DUp && t/=DDown))||(s==J && t/= DDown)
-                                               ||(s==L && t /=DUp)||(s==T && t/=DLeft)  = (Figure s t u{x = 8*blockSize})
+mul8or9  (Figure s t u)   |( s==O )|| (s==Z && (t /= DUp && t/=DDown))
+                                               ||(s==S && (t/= DUp && t/=DDown))
+                                               ||(s==J && t/= DDown)
+                                               ||(s==L && t /=DUp)||(s==T && t/=DLeft) 
+                                                = (Figure s t u{x = 8*blockSize})
                           |(s==I && (t /=DDown && t/=DUp)) = (Figure s t u{x = 7*blockSize})
                           |otherwise = (Figure s t u{x = 9*blockSize})            
 -- | Отнимаем блок из координаты.
@@ -467,8 +576,10 @@ moveRightSteppedRound u    = u{ figure = cons  (plbl (getf(figure u))) (rest  (f
 -- | В зависимости от типа фигуры решаем, насколько до 
 -- начала надо перемещать фигуру.
 bl::Figure->Figure
-bl  (Figure s t u)  | (s==O &&t == DDown)||(s== Z)||(s==S)||(s==J && t/=DUp)|| (s==L && t/=DDown)||(s==T && t == DUp)
-                                         ||(s==T && t /= DRight)||(s==I && t /= DUp && t/=DDown )  = (Figure s t u{x = blockSize})
+bl  (Figure s t u)  | (s==O &&t == DDown)||(s== Z)||(s==S)||(s==J && t/=DUp)
+                                         || (s==L && t/=DDown)||(s==T && t == DUp)
+                                         ||(s==T && t /= DRight)||(s==I && t /= DUp && t/=DDown ) 
+                                         = (Figure s t u{x = blockSize})
                     | otherwise =    (Figure s t u{x = 0})           
 -- | К координате фигуры добовляем блок.
 plbl::Figure->Figure
@@ -494,15 +605,20 @@ moveRightSmoothRound u    = u{ figure = cons  (plbl (getf(figure u))) (rest  (fi
 
 -- | Проверка, пересекает ли блок границы игрового окна.
 collidesBlock::Coord -> Bool
-collidesBlock Coord{..} | (x < 0) || (x  + blockSize > screenWidth) || (y < 0) || (y + blockSize > screenHeight) = True
-       |otherwise = False
+collidesBlock Coord{..} | (x < 0) || (x  + blockSize > screenWidth) 
+                              || (y < 0) 
+                              || (y + blockSize > screenHeight) = True
+                       |otherwise = False
 
 -- | Проверка, пересекает ли блок боковые границы окна, либо доску в ступенчатом тетриче.
 collidesBlockSides::Coord -> Board -> Bool
 collidesBlockSides block [] = (x block < 0) || (x block  + blockSize > screenWidth)
-collidesBlockSides block (c:[]) = (x block < 0) || (x block + blockSize > screenWidth) || (x block == x c) && (y block == y c)
-collidesBlockSides block (c:brds) | (x block < 0) || (x block + blockSize > screenWidth) || (x block == x c) && (y block == y c)  = True
-                                      | otherwise = collidesBlockSides block brds
+collidesBlockSides block (c:[]) = (x block < 0)   || (x block + blockSize > screenWidth) 
+                                                  || (x block == x c) && (y block == y c)
+
+collidesBlockSides block (c:brds) | (x block < 0) || (x block + blockSize > screenWidth) 
+                                                  || (x block == x c) && (y block == y c)  = True
+                                  | otherwise = collidesBlockSides block brds
 
 -- | Проверка выхода за границы поля слева.
 collidesBlockSidesWhallLeft::Coord -> Board -> Bool
@@ -515,26 +631,41 @@ collidesBlockSidesWhallRight u _= ((x u) + blockSize) > screenWidth
 -- | Проверка, пересекает ли блок боковые границы окна, либо доску в ступенчатом тетриче.
 collidesBlockSidesSmooth::Coord -> Board -> Bool
 collidesBlockSidesSmooth u [] = ((x u) < 0) || ((x u)  + blockSize > screenWidth)
-collidesBlockSidesSmooth u (u1:[]) = ((x u) < 0) || ((x u)  + blockSize > screenWidth) || ((x u) ==(x u1)) && ((y u)==(y u1))
-                                                 ||(((x u)==(x u1)) &&((y u)>((y u1) - blockSize) && (y u)<((y u1) + blockSize)))
-collidesBlockSidesSmooth u (u1:brds) | ((x u) < 0) || ((x u)  + blockSize > screenWidth) || ((x u) ==(x u1)) && ((y u)==(y u1))
-                                                   ||(((x u)==(x u1)) &&((y u)>((y u1) - blockSize) && (y u)<((y u1) + blockSize))) = True
-                                             | otherwise = collidesBlockSides u brds
+collidesBlockSidesSmooth u (u1:[]) = ((x u) < 0) || ((x u)  + blockSize > screenWidth) 
+                                  || ((x u) ==(x u1)) && ((y u)==(y u1))
+                                  ||(((x u)==(x u1)) &&((y u)>((y u1) - blockSize) && (y u)<((y u1) + blockSize)))
+
+collidesBlockSidesSmooth u (u1:brds) | ((x u) < 0) || ((x u)  + blockSize > screenWidth) 
+                                       || ((x u) ==(x u1)) && ((y u)==(y u1))
+                                       ||(((x u)==(x u1)) &&((y u)>((y u1) - blockSize) && (y u)<((y u1) + blockSize))) = True
+                                     | otherwise = collidesBlockSides u brds
 
 -- | Проверка, пересекает ли блок пол или доску в ступенчатом.
 collidesBlockDown::Coord -> Board-> Bool
 collidesBlockDown block []  =   (y block + blockSize > screenHeight)
-collidesBlockDown block (c:[])  =   ((y block + blockSize > screenHeight) || ((x block == x c) && (y block == y c)) || (((x block) + 300) == x c && (y block == y c)) || (((x block) - 300)== x c && (y block == y c)))
-collidesBlockDown block (c:brds)  | ((y block + blockSize > screenHeight) || (x block == x c) && (y block == y c)|| (((x block) + 300) == x c && (y block == y c)) || (((x block) - 300)== x c && (y block == y c)))  = True
-                                      |  otherwise = collidesBlockDown block brds
+collidesBlockDown block (c:[])  =   ((y block + blockSize > screenHeight) || ((x block == x c) && (y block == y c)) 
+                                                  || (((x block) + 300) == x c && (y block == y c)) 
+                                                  || (((x block) - 300)== x c && (y block == y c)))
 
+collidesBlockDown block (c:brds)  | ((y block + blockSize > screenHeight) || (x block == x c) && (y block == y c)
+                                                  || (((x block) + 300) == x c && (y block == y c))
+                                                  || (((x block) - 300)== x c && (y block == y c)))  = True
+                                  |  otherwise = collidesBlockDown block brds
+                                
 -- | Проверка, пересекает ли блок пол или доску в плавном.
 collidesBlockDownSmooth::Coord -> Board-> Bool
-collidesBlockDownSmooth u []  =   ((y u)  > screenHeight)|| ((y u) < 0)
-collidesBlockDownSmooth u (u1:[])  =   ((((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0) || (((x u) + 300) == x u1 && (y u == y u1)) || (((x u) - 300)== x u1 && (y u == y u1)))
-collidesBlockDownSmooth u (u1:brds)  |  ((((y u)  > screenHeight) || ((x u) ==(x u1)) && (((y u) )==(y u1)))|| ((y u) < 0)|| (((x u) + 300) == x u1 && (y u == y u1)) || (((x u) - 300)== x u1 && (y u == y u1))) =True
-                                            |  otherwise = collidesBlockDownSmooth u brds
+collidesBlockDownSmooth u []  =   ((y u)  > screenHeight)        || ((y u) < 0)
 
+collidesBlockDownSmooth u (u1:[])  = ((((y u)  > screenHeight)   || ((x u) ==(x u1)) && (((y u) )==(y u1)))
+                                                      || ((y u) < 0) 
+                                                      || (((x u) + 300) == x u1 && (y u == y u1)) 
+                                                      || (((x u) - 300)== x u1 && (y u == y u1)))
+
+collidesBlockDownSmooth u (u1:brds)  |  ((((y u)  > screenHeight)|| ((x u) ==(x u1)) && (((y u) )==(y u1)))
+                                                      || ((y u) < 0)|| (((x u) + 300) == x u1 && (y u == y u1)) 
+                                                      || (((x u) - 300)== x u1 && (y u == y u1))) =True
+                                     |  otherwise = collidesBlockDownSmooth u brds
+                           
 -- | Проверка, пересекается ли блок потолок или доску.
 collidesBlockUp :: Coord -> Board-> Bool
 collidesBlockUp c []                    =  y c < 0
@@ -555,53 +686,67 @@ collidesFigureSmooth (a, b, c, d) brd = or
 
 -- | Проверка, пересекает ли фигура боковые границы окна, либо доску.
 collidesFigureSides::BlockedFigure -> Board -> Bool
-collidesFigureSides (a,b,c,d) board | (collidesBlockSides a board) || (collidesBlockSides b board) 
-                                       || (collidesBlockSides c board) || (collidesBlockSides d board) = True
+collidesFigureSides (a,b,c,d) board | (collidesBlockSides a board) 
+                                        || (collidesBlockSides b board) 
+                                        || (collidesBlockSides c board) 
+                                        || (collidesBlockSides d board) = True
                                     |otherwise = False
 
 -- | Пересекает ли границу слева в ступенчатом(чтобы можно было ходить покругу).
 collidesFigureSidesWallLeft    ::BlockedFigure -> Board -> Bool
-collidesFigureSidesWallLeft  (a,b,c,d) board | (collidesBlockSidesWhallLeft a board) || (collidesBlockSidesWhallLeft b board) 
-                                              || (collidesBlockSidesWhallLeft c board) || (collidesBlockSidesWhallLeft d board) = True
+collidesFigureSidesWallLeft  (a,b,c,d) board | (collidesBlockSidesWhallLeft a board)
+                                              || (collidesBlockSidesWhallLeft b board) 
+                                              || (collidesBlockSidesWhallLeft c board) 
+                                              || (collidesBlockSidesWhallLeft d board) = True
                                              |otherwise = False
 
 -- | Пересекает ли границу справа в ступенчатом(чтобы можно было ходить покругу).
 collidesFigureSidesWallRight::BlockedFigure -> Board -> Bool
-collidesFigureSidesWallRight (a,b,c,d) board | (collidesBlockSidesWhallRight a board) || (collidesBlockSidesWhallRight b board) 
-                                               || (collidesBlockSidesWhallRight c board) || (collidesBlockSidesWhallRight d board) = True
+collidesFigureSidesWallRight (a,b,c,d) board | (collidesBlockSidesWhallRight a board) 
+                                               || (collidesBlockSidesWhallRight b board) 
+                                               || (collidesBlockSidesWhallRight c board) 
+                                               || (collidesBlockSidesWhallRight d board) = True
                                              |otherwise = False
 
 -- | Пересекает ли фигуры в плавном.
 collidesFigureSidesSmooth::BlockedFigure -> Board -> Bool
-collidesFigureSidesSmooth (a,b,c,d) board | (collidesBlockSidesSmooth a board) || (collidesBlockSidesSmooth b board) 
-                                            || (collidesBlockSidesSmooth c board) || (collidesBlockSidesSmooth d board) = True
+collidesFigureSidesSmooth (a,b,c,d) board | (collidesBlockSidesSmooth a board)
+                                            || (collidesBlockSidesSmooth b board) 
+                                            || (collidesBlockSidesSmooth c board)
+                                            || (collidesBlockSidesSmooth d board) = True
                                           |otherwise = False        
 
 -- | Проверка, что фигура касается снизу доски или поля в ступенчотом.
 collidesFigureDown::BlockedFigure -> Board -> Bool
-collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) || (collidesBlockDown b board) || (collidesBlockDown c board) 
-                                      || (collidesBlockDown d board) = True
+collidesFigureDown (a,b,c,d) board | (collidesBlockDown a board) 
+                                     || (collidesBlockDown b board) 
+                                     || (collidesBlockDown c board) 
+                                     || (collidesBlockDown d board) = True
                                    |otherwise = False
 
 -- | Проверка, что фигура касается снизу доски или поля в плавном.
 collidesFigureDownSmooth::BlockedFigure -> Board -> Bool
-collidesFigureDownSmooth (a,b,c,d) board | (collidesBlockDownSmooth a board) || (collidesBlockDownSmooth b board) 
-                                          || (collidesBlockDownSmooth c board) || (collidesBlockDownSmooth d board) = True
-                                         |otherwise = False
+collidesFigureDownSmooth (a,b,c,d) board | (collidesBlockDownSmooth a board) 
+                                           || (collidesBlockDownSmooth b board) 
+                                           || (collidesBlockDownSmooth c board)
+                                           || (collidesBlockDownSmooth d board) = True
+                                        |otherwise = False
 
 
 
 -- | Игра окончена?
 isGameOver::GameState -> Bool
-isGameOver u |((typemoving u) == TetrisStepped) = collidesFigureDown (figureToDraw (getf(rest  (figure u))) ) (board u)  
-           |otherwise = collidesFigureDownSmooth (figureToDraw (getf(figure u))) (board u)
+isGameOver u |((typemoving u) == TetrisStepped) = collidesFigureDown (figureToDraw 
+                                                  (getf(rest  (figure u))) ) (board u)  
+             |otherwise = collidesFigureDownSmooth (figureToDraw (getf(figure u))) (board u)
 
 
 
 -- | Сортируем строки.
 sortRows :: Board -> Board
 sortRows []     = []
-sortRows (c : brds) = sortRows (filter (\c1 -> y c1 > y c) brds) ++ [c] ++ sortRows (filter (\c1 -> y c1 <= y c) brds)
+sortRows (c : brds) = sortRows (filter (\c1 -> y c1 > y c) brds) ++ [c] ++ sortRows 
+                (filter (\c1 -> y c1 <= y c) brds)
 
 -- | Удалям заполненные строки.
 deleteRows :: Board -> Board
@@ -641,9 +786,10 @@ dropit u ptr |(typemoving u)  == TetrisStepped = dropitStepped u ptr
 -- | Роняет в ступенчатом.             
 dropitStepped ::GameState -> Int -> GameState
 dropitStepped u pts | collide = u{score = ((score u) + (div pts blockSize))}   
-                    |otherwise = dropitStepped u{figure = cons  (plbly (getf(figure u)))   (rest  (figure u))} pts
+                    |otherwise = dropitStepped u{figure = cons  (plbly (getf(figure u)))   
+                     (rest  (figure u))} pts
                     where                                           
-                                              collide = collidesFigureDown (figureToDraw (plbly (getf (figure u)))) (board u)
+                collide = collidesFigureDown (figureToDraw (plbly (getf (figure u)))) (board u)
 -- | Прибавить к ординате размер блока.
 plbly::Figure->Figure
 plbly  (Figure s t u)   = (Figure s t u{y = (y u) + blockSize}) 
@@ -653,7 +799,7 @@ dropitSmooth ::GameState -> Int -> GameState
 dropitSmooth u pts | collide = u{score = (score u) + (div pts blockSize)}   
                     |otherwise = dropitSmooth u{figure = cons  (ploy (getf (figure u)))   (rest  (figure u))} pts
                     where                                           
-                                              collide = collidesFigureDownSmooth (figureToDraw (plbly (getf (figure u)))) (board u)
+                    collide = collidesFigureDownSmooth (figureToDraw (plbly (getf (figure u)))) (board u)
 -- | Прибавить к ординате размер 1.
 ploy::Figure->Figure
 ploy  (Figure s t u)   = (Figure s t u{y  = (y u) + 1}) 
@@ -687,40 +833,6 @@ drawBlockCircleHelp :: Coord -> Picture
 drawBlockCircleHelp u = drawBlockCircle (fromCoord u)
 
 
--- | Дллина блока в круговом тетрисе.
-angle :: Float
-angle = 36
-
--- | Размер блока во Float.
-blockSizeFloat :: Float
-blockSizeFloat = 30
-
--- | Угол, который приходиться рисовать отдельно, т.к. функция
--- ThickArc рисует его с другой стороны.
-specangel :: Float
-specangel = 324
-
--- | Смещение.
-offset2 :: Float
-offset2 = 100
-
--- | Масштаб для риования.
-myscale :: Float
-myscale = 2.3
-
--- | Подходящий размер.
-sizefit ::Float
-sizefit = 5
-
--- | Подходящий размер в Int.
-sizefitInt ::Int
-sizefitInt = 5
-
--- | Другое смещение
-offsedge ::Int
-offsedge = 15
-
-
 
 
 -- | Рисуем блок в круговом тетрисе.
@@ -729,15 +841,15 @@ drawBlockCircle  (b,c,d)
                     |(b==270|| b==570|| b==870||b== -30|| b== -330|| b== -630) = 
   pictures [ translate (-w) (h - offset2) (scale  myscale myscale  ( pictures[ 
     (rotate (-specangel) (color (numtocolor d)   (thickArc (0) (angle) 
-                      (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+                      (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) ))),
    (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) 
-                      ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -2 ) (fromIntegral 1) ))),
+                      ( (angle  )) (fromIntegral (c + sizefitInt +offsedge) / sizefit -thicknessTwo ) (fromIntegral 1) ))),
    (rotate (-specangel) (color magenta  (thickArc (fromIntegral (0  )) ( (angle  )) 
-                      (fromIntegral (c + sizefitInt-offsedge) / sizefit -2 ) (fromIntegral 1) )) ),
+                      (fromIntegral (c + sizefitInt-offsedge) / sizefit -thicknessTwo ) (fromIntegral 1) )) ),
    (rotate (-specangel) (color magenta   (thickArc (0) (1) 
-                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))),
+                       (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) ))),
     (rotate (-specangel) (color magenta   (thickArc (angle - 1) (angle) 
-                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ))) ]))
+                       (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) ))) ]))
     ]                 
     
         
@@ -745,16 +857,16 @@ drawBlockCircle  (b,c,d)
                    |otherwise = pictures [ translate (-w) (h - offset2) (scale  myscale myscale  (pictures
  [ 
   color (numtocolor d)   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) 
-                          (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,            
+                          (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) ) ,            
    color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) 
-                          (fromIntegral (c + sizefitInt+offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+                          (fromIntegral (c + sizefitInt+offsedge) / sizefit  - thicknessTwo) (fromIntegral 1) ) ,
    color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle) (((fromIntegral b)/blockSizeFloat)*angle + angle) 
-                          (fromIntegral (c + sizefitInt-offsedge) / sizefit  - 2) (fromIntegral 1) ) ,
+                          (fromIntegral (c + sizefitInt-offsedge) / sizefit  - thicknessTwo) (fromIntegral 1) ) ,
 
    color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle ) (((fromIntegral b)/blockSizeFloat)*angle + 1) 
-                         (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) ) ,
+                         (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) ) ,
    color magenta   (thickArc (((fromIntegral b)/blockSizeFloat)*angle +35) (((fromIntegral b)/blockSizeFloat)*angle + angle)
-                       (fromIntegral (c + sizefitInt) / sizefit  - 2) (fromIntegral 6) )
+                       (fromIntegral (c + sizefitInt) / sizefit  - thicknessTwo) ( thicknessOne) )
    ]))
     ]
   where
@@ -766,23 +878,23 @@ magframe :: Int -> Int -> [Picture]
 magframe b c = 
   [ color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c))
                             , (fromIntegral b,        fromIntegral (-c - 2))
-                            , (fromIntegral (b + 30), fromIntegral (-c - 2))
-                            , (fromIntegral (b + 30), fromIntegral (-c)) 
+                            , (fromIntegral (b + blockSize), fromIntegral (-c - 2))
+                            , (fromIntegral (b + blockSize), fromIntegral (-c)) 
                             ])
   , color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c))
-                            , (fromIntegral b,        fromIntegral (-c - 30))
-                            , (fromIntegral (b + 2),  fromIntegral (-c - 30))
+                            , (fromIntegral b,        fromIntegral (-c - blockSize))
+                            , (fromIntegral (b + 2),  fromIntegral (-c - blockSize))
                             , (fromIntegral (b + 2),  fromIntegral (-c))
                             ])
-  , color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c - 28))
-                            , (fromIntegral b,        fromIntegral (-c - 30))
-                            , (fromIntegral (b + 30), fromIntegral (-c - 30))
-                            , (fromIntegral (b + 30), fromIntegral (-c - 28))
+  , color magenta  (polygon [ (fromIntegral b,        fromIntegral (-c - blockSize - 2))
+                            , (fromIntegral b,        fromIntegral (-c - blockSize))
+                            , (fromIntegral (b + blockSize), fromIntegral (-c - blockSize))
+                            , (fromIntegral (b + blockSize), fromIntegral (-c - blockSize - 2))
                             ])
-  , color magenta  (polygon [ (fromIntegral (b + 28), fromIntegral (-c))
-                            , (fromIntegral (b + 28), fromIntegral (-c - 30))
-                            , (fromIntegral (b + 30), fromIntegral (-c - 30))
-                            , (fromIntegral (b + 30), fromIntegral (-c)) 
+  , color magenta  (polygon [ (fromIntegral (b + blockSize - 2), fromIntegral (-c))
+                            , (fromIntegral (b + blockSize - 2), fromIntegral (-c - blockSize))
+                            , (fromIntegral (b + blockSize), fromIntegral (-c - blockSize))
+                            , (fromIntegral (b + blockSize), fromIntegral (-c)) 
                             ])
   ]
 
@@ -801,14 +913,14 @@ drawBlock :: Coord-> Picture
 drawBlock  crd 
   =  pictures [ translate (-w) h (scale  1 1 (pictures (
                   [ color (numtocolor clr1) (polygon [ (fromIntegral b,         fromIntegral (-c))
-                                                    , (fromIntegral b,         fromIntegral (-c - 30))
-                                                    , (fromIntegral  (b + 30), fromIntegral (-c - 30))
-                                                    , (fromIntegral  (b + 30), fromIntegral (- c))
+                                                    , (fromIntegral b,         fromIntegral (-c - blockSize))
+                                                    , (fromIntegral  (b + blockSize), fromIntegral (-c - blockSize))
+                                                    , (fromIntegral  (b + blockSize), fromIntegral (- c))
                                                     ])
                   ] ++ (magframe b c)))) ]
   where
-    w = fromIntegral screenWidth  / 2
-    h = fromIntegral screenHeight / 2
+    w = fromIntegral screenWidth  / transl
+    h = fromIntegral screenHeight / transl
     b = x crd
     c = y crd
     clr1 = clr crd
@@ -904,8 +1016,8 @@ drawTetris u | ((typerepres u)==TetrisRound) =  pictures
     drawScore (score u),
     drawCircleBackGr,
     drawRectangleMenu,
-    drawmenuCircle,
-    drawmenuSmooth,
+    drawmenuCircle tetrTypbutton,
+    drawmenuSmooth tetrMoveButton,
     drawtextCircle,
     drawtextSmooth 
   
@@ -916,57 +1028,101 @@ drawTetris u | ((typerepres u)==TetrisRound) =  pictures
    drawBoard (board u) ,
    drawScore (score u),
    drawRectangleMenu,
-   drawmenuCircle,
-   drawmenuSmooth,
-   drawtextCircle,
+   drawmenuCircle tetrTypbutton,
+   drawmenuSmooth tetrMoveButton,
+   drawtextCircle ,
    drawtextSmooth  ,
    drawRectanglBackGr
   ] 
 
 -- | Нарисовать фон квадрата.  
 drawRectanglBackGr::Picture
-drawRectanglBackGr = pictures [ translate ((-(fromIntegral screenWidth  / 2))) (fromIntegral screenHeight / 2) (scale  1 1   
-                                    (color cyan (line [(0,0) , (0,-600),(300,-600),(300,0),(0,0)])))]
+drawRectanglBackGr = pictures [ translate ((-(fromIntegral screenWidth  / transl)))
+                      (fromIntegral screenHeight / transl) (scale  scaleBackGrTwo scaleBackGrTwo   
+                    (color cyan (line [(0,0) , (0,-screenHeightFloat),
+                      (screenWidthFloat,-screenHeightFloat),(screenWidthFloat,0),(0,0)])))]
+
+
+scaleBackGrTwo::Float
+scaleBackGrTwo = 1
+
+screenHeightFloat::Float
+screenHeightFloat = 600
+
+screenWidthFloat ::Float
+screenWidthFloat = 300
+
+scalCirclB ::Float
+scalCirclB = 1.3
+
+drawTextConSmooth::Float
+drawTextConSmooth = -18
+
+drawTextConCircle::Float
+drawTextConCircle = 4
+translMenu::Float
+translMenu = 10
+
+translMenu2::Float
+translMenu2= 15
+transCircleBack::Float
+transCircleBack = 0
+consCircBack::Float
+consCircBack = 43
+consCircBackTwo::Float
+consCircBackTwo = 53
+tranRectCon::Float
+tranRectCon = -0.3
+tranRectConTwo::Float
+tranRectConTwo = 0.02
+
+tranRectConThree::Float
+tranRectConThree = 0.1
 
 -- | Нарисовать фон круга.
 drawCircleBackGr::Picture
-drawCircleBackGr = translate (0) ((0) - 100) (scale 1.3 1.3 (color cyan (circle  ( 205))))
+drawCircleBackGr = translate (transCircleBack) ((transCircleBack)  + transtBackGround) 
+              (scale scalCirclB scalCirclB (color cyan (circle  ( conCircleB))))
 
 -- | Нарисовать меню.
 drawRectangleMenu ::Picture
-drawRectangleMenu = translate (-0.3 * fieldWidth/2 + 113) (fieldHeight/2 + (fromIntegral screenHeight /2) - 53)
-  (roundedRect (withAlpha 0.7 white) (greyN 0.7) ( fieldWidth/2 + 43) ((fromIntegral screenHeight / 10) + fieldHeight / 15) 
-                                   (0.1 * fieldWidth) (0.02 * fieldWidth))
+drawRectangleMenu = translate (tranRectCon * fieldWidth/transl + conRecMenu) 
+               (fieldHeight/transl + (fromIntegral screenHeight /transl) - consCircBackTwo)
+               (roundedRect (withAlpha alpha white) (greyN alpha) ( fieldWidth/transl + consCircBack) 
+               ((fromIntegral screenHeight / translMenu) + fieldHeight / translMenu2) 
+                                   (tranRectConThree * fieldWidth) (tranRectConTwo * fieldWidth))
 
 -- | Нарисовать кнопку для выбора плавного режима.
-drawmenuSmooth::Picture
-drawmenuSmooth = (color orange (polygon [ (101, 290), (101, 250), (148, 250), (148, 290) ]))
+drawmenuSmooth:: (Float,Float,Float,Float)->Picture
+drawmenuSmooth (a,b,c,d) = (color orange (polygon [ (a, d), (a, c), (b, c), (b, d) ]))
 
 -- | Нарисовать кнопку для выбора кругового режима.
-drawmenuCircle :: Picture
-drawmenuCircle =  (color yellow (polygon [ (34, 290), (34, 250), (100, 250), (100, 290) ]))
+drawmenuCircle :: (Float,Float,Float,Float)->Picture
+drawmenuCircle (a,b,c,d) =  (color yellow (polygon [ (a, d), (a, c), (b, c), (b, d) ]))
 
 -- | Нарисовать текст на кнопке с плавным режимом.
 drawtextSmooth :: Picture
-drawtextSmooth = translate (-(fromIntegral screenWidth  / 2) + 225) (fromIntegral screenHeight / 2 -18) 
-                              (scale 13 13 (pictures [translate (2) (-1.5) (scale 0.008 0.008 (color red (text  "Smooth")))]))
+drawtextSmooth = translate (-(fromIntegral screenWidth  / transl) + conSmooth) 
+                     (fromIntegral screenHeight / transl  + drawTextConSmooth) 
+                      (scale scaleTSmooth scaleTSmooth
+                    (pictures [translate (transl) (translateT) (scale scaleT scaleT (color red (text  "Smooth")))]))
 
 -- | Нарисовать текст на кнопке с круговым режимом.
 drawtextCircle :: Picture
-drawtextCircle = translate (-(fromIntegral screenWidth  / 2) + 123) (fromIntegral screenHeight / 2 + 4) 
-                            (scale 30 30 (pictures [translate (2) (-1.5) (scale 0.008 0.008 (color red (text  "Type")))]))
+drawtextCircle = translate (-(fromIntegral screenWidth  / transl) + conCircle) 
+                  (fromIntegral screenHeight / transl + drawTextConCircle) 
+                      (scale blockSizeFloat blockSizeFloat
+                   (pictures [translate (transl) (translateT) (scale scaleT scaleT (color red (text  "Type")))]))
 
 
 -- | Нарисовать счет.
 drawScore :: Score -> Picture
-drawScore score = translate (-w) h (scale 30 30 (pictures
-  [ translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score)))) 
+drawScore score = translate (-w) h (scale blockSizeFloat blockSizeFloat (pictures
+  [ translate transl (translateT) (scale scaleSc scaleSc (color green (text (show score)))) 
   ]))
   where
-    w = fromIntegral screenWidth  / 2
-    h = fromIntegral screenHeight / 2
-
-
+    w = fromIntegral screenWidth  / transl
+    h = fromIntegral screenHeight / transl
 
 
 
@@ -999,16 +1155,17 @@ updateTetris :: Float -> GameState -> GameState
 updateTetris dt u |(typemoving u) == TetrisStepped = updateTetrisStepped dt u 
              |otherwise = updateTetrisSmooth dt u
 
+
 -- | Обновить ступенчатый.
 updateTetrisStepped :: Float -> GameState -> GameState 
-updateTetrisStepped dt u |gameover = genNewUniverse u (0.7)  
+updateTetrisStepped dt u |gameover = genNewUniverse u (inintTactStepped)  
                     |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) ) 
                                where
                               gameover = isGameOver u   
 
 -- | Обновить плавный.
 updateTetrisSmooth :: Float -> GameState -> GameState 
-updateTetrisSmooth dt u |gameover = genNewUniverse u (0.01)  
+updateTetrisSmooth dt u |gameover = genNewUniverse u (inintTactSmooth)  
                     |otherwise = newLevel (newTact u dt (extrSpeed (speedandtime u)) )                                
                        where
                        gameover = isGameOver u   
@@ -1168,17 +1325,6 @@ getc :: Figure-> Int
 getc  (Figure _ _ u) = (y u)
 
 
--- | Координаты кнопки type x1,x2 ,y1,y2
-tetrTypbutton::(Float,Float,Float,Float)
-tetrTypbutton = (34,100,250,290)
-
-
-
-
-
--- | Координаты кнопки move x1,x2 ,y1,y2
-tetrMoveButton ::(Float,Float,Float,Float)
-tetrMoveButton = (101,148,250,290)
 
 
 
@@ -1199,26 +1345,22 @@ switchTetrisType :: TetrisType -> TetrisType
 switchTetrisType TetrisRect = TetrisRound
 switchTetrisType TetrisRound = TetrisRect
 
+
+
 -- | Сгенерировать новый тетрис в зависимости от типа тетриса.
 chMoving:: GameState->GameState
-chMoving u |(typemoving u)==TetrisStepped = u{ board   = genEmptyBoard  
+chMoving u |(typemoving u)==TetrisStepped = genTetris u inintTactSmooth 
+           |otherwise =  genNewUniverse u inintTactStepped 
+
+genTetris::GameState-> Float->GameState
+genTetris u df= u{ board   = genEmptyBoard  
                           , figure  = (rest  (figure u))
-                          , speedandtime   = (0.01, 0)
+                          , speedandtime   = (df, 0)
                           , score    = 0
                           
                           ,typemoving =  switchTetrisMove (typemoving u)
-                          ,tactgamestate     = 0.01
+                          ,tactgamestate     = df
                           }
-
-             |otherwise =   u{ board   = genEmptyBoard  
-                          , figure  = (rest  (figure u))
-                          , speedandtime   = (0.7, 0)
-                          , score    = 0
-                          
-                          ,typemoving =  switchTetrisMove (typemoving u)
-                          ,tactgamestate     = 0.7
-                          }           
-
 -- | Изменить тип тетриса(планый или ступенчатый).
 switchTetrisMove :: TetrisMove -> TetrisMove
 switchTetrisMove TetrisStepped = TetrisSmooth
