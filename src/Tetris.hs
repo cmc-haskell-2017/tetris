@@ -2,7 +2,7 @@ module Tetris where
 
 import System.Random
 import Graphics.Gloss.Interface.Pure.Game
-
+import Data.List
 -- | Главная функция.
 run :: IO ()
 run = do
@@ -268,16 +268,16 @@ collidesBlock c
 -- | Проверка, пересекает ли блок боковые границы окна, либо доску.
 collidesBlockSides :: Coord -> Board -> Bool
 collidesBlockSides c []                     = (x c < 0) || (x c + blockSize > screenWidth)
-collidesBlockSides c (c1 : []) = (x c < 0) || (x c + blockSize > screenWidth) || (x c == x c1) && (x c == y c1)
+collidesBlockSides c (c1 : []) = (x c < 0) || (x c + blockSize > screenWidth) || (x c == x c1) && (y c == y c1)
 collidesBlockSides c (c1 : brds) 
   | (x c < 0) || (x c + blockSize > screenWidth) || (x c==x c1) && (y c==y c1)  = True
   | otherwise = collidesBlockSides c brds
 
 -- | Проверка, пересекает ли блок пол или доску.
 collidesBlockDown :: Coord -> Board-> Bool
-collidesBlockDown c []                      = (y c + blockSize > screenHeight)
+collidesBlockDown c [] = (y c + blockSize > screenHeight)
 collidesBlockDown c (c1 : [])  = (y c + blockSize > screenHeight) || (x c==x c1) && (y c==y c1)
-collidesBlockDown c (c1 : brds)  
+collidesBlockDown c (c1 : brds)
   | (y c + blockSize > screenHeight) || (x c == x c1) && (y c == y c1)  = True
   |  otherwise = collidesBlockDown c brds
 
@@ -466,13 +466,36 @@ drawDifficulty dif = translate (-w) h (scale 30 30 (pictures
 vectolist :: (Coord, Coord, Coord, Coord) -> [Coord]
 vectolist (a, b, c, d) = [a, b, c, d]
 
--- | Добавляет в доску упавшую фигуру.
+sortBlockedFigure :: [Coord] -> [Coord]
+sortBlockedFigure [] = []
+sortBlockedFigure (brd : brds) = sortBlockedFigure (filter (\x1 -> (gr x1 brd)) brds)
+                      ++ [brd]
+                      ++ sortBlockedFigure (filter (\x1 -> not (gr x1 brd)) brds)
+gr::Coord->Coord->Bool
+gr a b = (y a) > (y b)
+
+updateBlocks::Board -> [Coord] -> Board
+updateBlocks (a:b:c:d:f) brd = (updateBlock (updateBlock (updateBlock (updateBlock brd a) b) c) d)
+
 updateBoard :: Gamestate -> Board
-updateBoard gs = board gs ++ vectolist (figureToDraw . curfig $ gs)
+updateBoard gs = updateBlocks (sortBlockedFigure (vectolist (figureToDraw . curfig $ gs))) (board gs)
+
+updateBlock::Board -> Coord -> Board
+updateBlock brd a = brd ++ [dropBlock a brd]
+
+dropBlock:: Coord -> Board -> Coord
+dropBlock block board
+  | collidesBlockDown (moveDownBlock block) board = block
+  | otherwise = dropBlock (moveDownBlock block) board
+
+moveDownBlock:: Coord -> Coord
+moveDownBlock a = a {y = (y a) + blockSize}
+
 
 -- | Аргумент функции 'play', обновляет состояние тетриса.
 -- С каждым кадром двигает фигуру вниз и пока здесь же проверяет,
 -- не достигла ли фигура нижней границы.
+-- ============
 updateTetris :: Float -> Gamestate -> Gamestate
 updateTetris dt gs
   | isGameOver gs = Gamestate { board = genEmptyBoard, curfig = head . figures $ gs, figures = tail . figures $ gs
@@ -623,7 +646,7 @@ genVariant gs dx r = Variant
   { profit = boardProfit (updateBoard (dropit (move (rot gs)) (screenHeight - (heightFigure (curfig gs)))))
   , offset = dx
   , turns = r
-  } 
+  }
   where
     rot = apply turn r
     move
@@ -643,7 +666,7 @@ makeStep gs
   | needright = moveRight gs
   | otherwise = dropit    gs (screenHeight - (heightFigure . curfig $ gs))
     where
-      newStep   = heightFigure (curfig  gs)  < 4 * blockSize 
+      newStep   = heightFigure (curfig  gs)  < 4 * blockSize
       needturn  = turns  (bestStep gs) > 0
       needleft  = offset (bestStep gs) < 0
       needright = offset (bestStep gs) > 0
