@@ -22,9 +22,9 @@ import Tetris
 -- and a connecton to the server
 data MP_Gamestate = MP_Gamestate 
   {
-    opponentState :: TVar GameState
-  , myState       :: TVar GameState
-  , connection    :: Connection
+    opponentState :: TVar GameState   -- ^ state of the opponent's game board
+  , myState       :: TVar GameState   -- ^ state of current player's game board
+  , connection    :: Connection       -- ^ connection to send data into
   }
 
 
@@ -81,8 +81,10 @@ renderTetris MP_Gamestate{..} = do
  gs2 <- readTVarIO opponentState
 
  io1  <- return (drawTetris (div screenWidth 2) gs1)
- io2  <- return (drawTetris ( - div screenWidth 2) gs2)
- return (pictures [io1, io2])
+ io2  <- return (drawTetris ( - div screenWidth 2 - 5) gs2)
+
+ border <- return (drawBorder)
+ return (pictures [io1, io2, border])
 
 
 -- | does nothing, only needed as a argument for a "play" function
@@ -105,5 +107,5 @@ main = do
     return ()
   where
     display  = InWindow "Tetris" (screenWidth * 2, screenHeight) (200, 200)
-    bgColor  = black      -- цвет фона
-    fps      = glob_fps   -- кол-во кадров в секунду
+    bgColor  = black      -- ^ background color
+    fps      = glob_fps   -- ^ frames per second - is to be set globally

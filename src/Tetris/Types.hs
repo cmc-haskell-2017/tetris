@@ -40,9 +40,9 @@ type Score = Int
 -- type Coord = (Int, Int, Int)
 
 data Coord = Coord 
-  { x   :: Int  -- ^ Координата x.
-  , y   :: Int  -- ^ Координата y.
-  , clr :: Int  -- ^ Цвет блока.
+  { x   :: Int  -- ^ Coordinate x.
+  , y   :: Int  -- ^ Coordinate y.
+  , clr :: Int  -- ^ Block colour.
   } deriving(Eq, Show, Generic)
 
 instance Binary Coord
@@ -64,9 +64,9 @@ data Direction = DUp | DDown | DLeft | DRight
 -- | the figure data type
 data Figure = Figure 
   {
-    f_type      :: FigureType 
-  , direction :: Direction
-  , coord     :: Coord 
+    f_type    :: FigureType  -- ^ describes the shape of the figure
+  , direction :: Direction   -- ^ desribes the current rotation of the figure
+  , coord     :: Coord       -- ^ coordinates of the main block of the figure (usually - the closest to the)
   } deriving(Generic, Eq, Show)
 
 instance Binary FigureType
@@ -85,11 +85,11 @@ screenHeight = 600
 
 -- | data type for a gamestate
 data GameState = GameState
- {  board   :: Board
-  , figures :: [Figure]
-  , speed   :: Speed
-  , time    :: Time
-  , score   :: Score
+ {  board   :: Board      -- ^ list of filled blocks
+  , figures :: [Figure]   -- ^ list (usually endless) of figures to go
+  , speed   :: Speed      -- ^ not speed exactle, more like time of one game tact
+  , time    :: Time       -- ^ time passed since last takt
+  , score   :: Score      -- ^ current score of the player
   } deriving (Generic, Eq)
 
 
@@ -111,6 +111,7 @@ fromWeb WebGS{..} = GameState w_board w_figures w_speed w_time w_score
 
 -- | gamestate type which can be transferred through the websockets
 -- only required for cleint-server game mode
+-- explanations of the fields is the same as for usual GS
 data WebGS = WebGS
   { w_board   :: Board
   , w_figures :: [Figure]

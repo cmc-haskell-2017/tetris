@@ -121,6 +121,29 @@ magframe b c =
                             ])
   ]
 
+
+drawBorder :: Picture
+drawBorder = 
+  color white (polygon [ (0.0, fromIntegral( - screenH))
+                        ,  (5.0, fromIntegral( - screenH))
+                        ,  (5.0, fromIntegral(screenH))
+                        ,  (0.0, fromIntegral(screenH))
+                        ])
+    where 
+      screenH = div screenHeight 2
+  
+
+-- drawBorder :: Picture
+-- drawBorder = 
+--   color white (polygon [ (0.0, 0.0) 
+--                         ,  (100.0, 0.0)
+--                         ,  (100.0, 100.0)
+--                         ,  (0.0, 100.0)
+--                         ])
+  
+
+
+
 -- | Converting digits into the color names
 numtocolor :: Int -> Color
 numtocolor 0 = makeColor 1 0.843137 0 1
@@ -165,7 +188,7 @@ drawBlockedFigure bias ((a, b, c, d)) =   pictures  [drawBlock bias a ,
                                                      drawBlock bias d ]
 
 
--- | drawing the whle tetris
+-- | drawing the whole tetris
 drawTetris :: Int -> GameState -> Picture
 drawTetris bias gs@GameState{..} = pictures
   [   
@@ -178,9 +201,9 @@ drawTetris bias gs@GameState{..} = pictures
 -- | drawing the score and the frame for it
 drawScore :: Int -> Score -> Picture
 drawScore bias score = translate (-w) h (scale 30 30 (pictures
-  [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])            -- белая рамка
-  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])    -- чёрные внутренности
-  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- красный счёт
+  [ color yellow (polygon [ (0, 0), (0, -2), (6, -2), (6, 0) ])             -- white frame
+  , color black (polygon [ (0, 0), (0, -1.9), (5.9, -1.9), (5.9, 0) ])      -- inner part of the board - black
+  , translate 2 (-1.5) (scale 0.01 0.01 (color green (text (show score))))  -- red score numbers
   ]))
   where
     w = fromIntegral screenWidth  / 2 + fromIntegral bias

@@ -35,11 +35,11 @@ data State = Active | Waiting | Closed deriving(Eq, Show)
 
 -- | Server configuration
 data Config = Config
-  { configUniverse  :: TVar (Map PlayerName GameState)               -- ^ The current state of the universe.
-  , configClients   :: TVar (Map PlayerName Client) -- ^ All connected clients by a unique name.
-  , configNames     :: TVar [PlayerName]            -- ^ Source of new names.
-  , controlThreads  :: TVar (Map PlayerName ThreadId)
-  , configState     :: TVar State
+  { configUniverse  :: TVar (Map PlayerName GameState) -- ^ The current state of the universe.
+  , configClients   :: TVar (Map PlayerName Client)    -- ^ All connected clients by a unique name.
+  , configNames     :: TVar [PlayerName]               -- ^ Source of new names.
+  , controlThreads  :: TVar (Map PlayerName ThreadId)  -- ^ dependence between player and a thread to procces his actions
+  , configState     :: TVar State                      -- ^ state of the server, depends on state of the connections
   }
 
 
@@ -149,14 +149,16 @@ handleActions name conn cfg@Config{..} = forever $ do
 -- | updates gamestate according to players action
 handlePlayerAction :: Action -> PlayerName -> GameState -> GameState
 handlePlayerAction act name gs@GameState{..}
+  | Text.head act == 'p' = pause gs 
+  | paused = gs
   | Text.head act == 'l' = moveRight gs 
   | Text.head act == 'j' = moveLeft gs 
   | Text.head act == 'k' = turn gs 
   | Text.head act == ' ' = dropit pts gs 
-  | Text.head act == 'p' = pause gs 
   | otherwise = gs
     where
       pts = (screenHeight - (y $ coord $ head figures))
+      paused = speed < 0
 
 
 -- | periodically updates gamestate to keep the game moving
@@ -199,9 +201,6 @@ broadcastUpdate un cfg@Config{..} = do
             
             fst <- return (un Map.! name) 
             snd <- return (head $ Map.elems (Map.delete name un)) 
-
-            -- if fst == snd then putStrLn "BAD!!!"
-            -- else putStrLn "OK"
 
             (sendData cfg conn name) $ GSPair (toWeb fst) (toWeb snd)
             return ()
