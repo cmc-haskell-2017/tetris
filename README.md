@@ -1,8 +1,6 @@
-# project-template
+# Tetris
 
-[![Build Status](https://travis-ci.org/cmc-haskell-2017/project-template.svg?branch=master)](https://travis-ci.org/cmc-haskell-2017/project-template)
-
-Шаблон проекта для выполнения практического задания.
+Игра "Тетрис" с поддержкой многопользовательского режима через сеть.
 
 ## Сборка и запуск
 
@@ -13,17 +11,25 @@ stack setup
 stack build
 ```
 
-Собрать и запустить проект можно при помощи команды
+Собрать и запустить игру в однопользовательском режиме можно при помощи команды
 
 ```
-stack build && stack exec my-project
+stack build && stack exec tetris
 ```
 
-Запустить тесты можно при помощи команды
+Для запуска клиента необходимо выполнить команду 
 
 ```
-stack test
+stack exec tetris-client <host_name> <port_number>
 ```
+где host_name - адрес хоста, а port_number - номер порта, через который будет осуществляться подключение
+
+Для запуска сервера необходимо выполнить команду 
+
+```
+stack exec tetris-server <port_number>
+```
+где port_number - номер порта, через который будет осуществляться подключение
 
 Чтобы запустить интепретатор GHCi и автоматически подгрузить все модули проекта, используйте команду
 
@@ -31,3 +37,4 @@ stack test
 stack ghci
 ```
 
+Приятной игры!
